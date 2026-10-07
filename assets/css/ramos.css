@@ -1,0 +1,90 @@
+/* =========================================================================
+   ESTILOS DO MOTOR DE RAMOS  (assets/css/ramos.css)
+   -------------------------------------------------------------------------
+   O QUE FAZ:  estiliza o que o motor de ramos (assets/js/profiles.js) acrescenta:
+               - os campos próprios do ramo no formulário de produtos;
+               - as etiquetas e o estado colorido nos cartões dos produtos;
+               - a dica do ramo no banner;
+               - a ferramenta do ramo (mini-calculadora) na aba Calculadora;
+               - o texto "O teu produto" na janela de escolha do ramo.
+   USA AS CORES DO SITE: só variáveis já existentes (--primary, --red, --line,
+   --soft, --muted...), por isso funciona nos temas claro e escuro.
+   ========================================================================= */
+
+/* Esconde o que o ramo atual não usa (ex.: "Quantidade" nos imóveis, a aba Clientes na gestão pessoal). */
+.ramo-off { display: none !important; }
+
+/* ---------- campos próprios do ramo (dentro do formulário de produtos) ---------- */
+/* "display: contents" faz com que cada campo se comporte como os outros campos do formulário. */
+.extra-fields { display: contents; }
+.extra-field { animation: ramo-in .35s ease both; }
+.extra-field:nth-child(2) { animation-delay: .04s; }
+.extra-field:nth-child(3) { animation-delay: .08s; }
+.extra-field:nth-child(4) { animation-delay: .12s; }
+.extra-field:nth-child(5) { animation-delay: .16s; }
+.extra-field:nth-child(6) { animation-delay: .2s; }
+@keyframes ramo-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ---------- cartões dos produtos ---------- */
+.product-price { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.product-price b { color: var(--ink); font-size: 15px; }
+
+/* etiquetas com os campos do ramo (tipologia, marca, km...) */
+.attr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.attr-chip {
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: var(--soft); border: 1px solid var(--line); color: var(--ink);
+}
+
+/* lista do estado (muda-se diretamente no cartão): a cor depende do valor */
+.attr-status {
+  width: 100%; margin-top: 12px; padding: 8px 12px; border-radius: 12px; cursor: pointer;
+  font: inherit; font-weight: 800; font-size: 13px; color: var(--ink);
+  background: var(--soft); border: 1px solid var(--line);
+  transition: border-color .25s, box-shadow .25s, background .25s;
+}
+.attr-status:hover { box-shadow: 0 0 16px rgba(94, 224, 189, .2); }
+.attr-status.st-disponivel, .attr-status.st-concluida, .attr-status.st-pago, .attr-status.st-entregue { border-color: rgba(94, 224, 189, .6); background: rgba(94, 224, 189, .12); }
+.attr-status.st-reservado, .attr-status.st-em-curso, .attr-status.st-proposta { border-color: rgba(255, 212, 119, .65); background: rgba(255, 212, 119, .12); }
+.attr-status.st-vendido, .attr-status.st-arrendado { border-color: rgba(135, 185, 255, .65); background: rgba(135, 185, 255, .12); }
+.attr-status.st-cancelada { border-color: rgba(255, 157, 144, .65); background: rgba(255, 157, 144, .12); }
+
+/* ---------- dica do ramo (no banner da Visão geral) ---------- */
+.ramo-tip {
+  margin: 12px 0 0; padding: 9px 14px; border-radius: 14px; cursor: pointer; font-size: 13.5px; line-height: 1.45;
+  background: var(--soft); border: 1px dashed var(--line); color: var(--ink);
+  transition: border-color .25s, background .25s;
+}
+.ramo-tip:hover { border-color: var(--primary); background: var(--soft-strong); }
+.ramo-tip:empty { display: none; }
+.ramo-tip.tip-in { animation: ramo-in .45s ease both; }
+
+/* ---------- janela de escolha do ramo: "O teu produto: Imóveis" ---------- */
+.profile-sells { display: block; margin-top: 8px; font-style: normal; font-size: 12px; color: var(--muted); }
+.profile-sells b { color: var(--primary); }
+
+/* ---------- ferramenta do ramo (aba Calculadora) ---------- */
+.ramo-tool .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 12px; align-items: start; }
+.tool-inputs { display: grid; gap: 12px; }
+.tool-outputs { display: grid; gap: 10px; }
+.tool-out {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 11px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line);
+}
+.tool-out span { color: var(--muted); font-size: 13px; }
+.tool-out strong { font-size: 17px; font-variant-numeric: tabular-nums; }
+/* o resultado principal destaca-se */
+.tool-out.main { border-color: rgba(94, 224, 189, .55); background: rgba(94, 224, 189, .1); }
+.tool-out.main strong { color: var(--primary); font-size: 21px; }
+
+@media (max-width: 640px) {
+  .ramo-tool .tool-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .extra-field, .ramo-tip.tip-in { animation: none; }
+}
+
+/* ---------- atalhos de permissões da equipa (Entrada de dados / Só agenda / Gestor) ---------- */
+.team-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.team-presets .button { transition: transform .2s, box-shadow .25s; }
+.team-presets .button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(94, 224, 189, .2); }

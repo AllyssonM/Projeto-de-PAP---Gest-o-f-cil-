@@ -1,0 +1,5 @@
+/* Meta Ads: só o estritamente necessário; usa os componentes existentes (panel, summary-card, seg, ap-chip, tabela). */
+#meta-table table { min-width: 880px; }
+#meta-table td.num, #meta-table th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#meta-table td.name { max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+#meta-totals .summary-card small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }

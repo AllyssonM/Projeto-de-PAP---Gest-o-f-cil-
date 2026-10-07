@@ -1,0 +1,294 @@
+/* =========================================================================
+   ESTILOS DOS COMPONENTES COMUNS  (assets/css/ux.css)
+   -------------------------------------------------------------------------
+   Avisos (toasts), janela de confirmação, efeito ripple, esqueletos de
+   carregamento e estados vazios/erro. Só usa as variáveis de cor do tema
+   (--primary, --red, --glass...), por isso funciona nos temas claro e escuro.
+   Transições entre 180 e 240 ms, como pedido: rápidas e discretas.
+   ========================================================================= */
+
+/* ---------- avisos (toasts) ---------- */
+/* Avisos de confirmação: canto inferior direito, à esquerda dos botões flutuantes (+ e assistente). Antes ficavam por cima dos botões do cabeçalho (olho, perfil) e tapavam-nos durante alguns segundos. */
+.ux-toasts { position: fixed; bottom: 24px; right: 92px; z-index: 60; display: grid; gap: 10px; width: min(380px, calc(100vw - 120px)); pointer-events: none; }
+@media (max-width: 720px) { .ux-toasts { left: 14px; right: 14px; bottom: 164px; width: auto; } }
+.ux-toast {
+  pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; padding: 13px 14px; border-radius: 16px;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink);
+  backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .14);
+  opacity: 0; transform: translateX(24px) scale(.97); transition: opacity .22s ease, transform .24s cubic-bezier(.2, .9, .3, 1.1);
+}
+.ux-toast.in { opacity: 1; transform: none; }
+.ux-toast svg { flex: none; margin-top: 1px; }
+.ux-toast-text { flex: 1; display: grid; gap: 2px; font-size: 14px; line-height: 1.4; }
+.ux-toast-text strong { font-size: 14px; }
+.ux-toast-x { flex: none; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; border-radius: 6px; }
+.ux-toast-x:hover { color: var(--ink); }
+.ux-toast.success { border-left: 3px solid var(--primary); } .ux-toast.success svg { color: var(--primary); }
+.ux-toast.warn    { border-left: 3px solid #ffd477; }        .ux-toast.warn svg    { color: #ffd477; }
+.ux-toast.error   { border-left: 3px solid var(--red); }     .ux-toast.error svg   { color: var(--red); }
+.ux-toast.info    { border-left: 3px solid #87b9ff; }        .ux-toast.info svg    { color: #87b9ff; }
+@media (max-width: 640px) { .ux-toasts { top: auto; bottom: 84px; right: 16px; left: 16px; width: auto; } }
+
+/* ---------- janela de confirmação (reutiliza o vidro do aviso de reunião) ---------- */
+.reminder-modal.ux-confirm { z-index: 70; }      /* mais específico que o z-index do reminder.css, para a janela ficar sempre acima do aviso de cookies (40) e do resto */
+.ux-confirm-card { width: min(440px, 100%); }
+.ux-confirm-card h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -.01em; }
+.ux-confirm-card p { margin: 0 0 14px; line-height: 1.5; }
+.ux-confirm-input { display: grid; gap: 7px; margin: 0 0 12px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.ux-confirm-error { color: var(--red); font-size: 13px; font-weight: 600; }
+.ux-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+.ux-confirm-actions .button { min-width: 110px; }
+/* botão de ação destrutiva (eliminar, desativar): coral do tema */
+.button.danger { background: linear-gradient(135deg, rgba(255, 157, 144, .9), rgba(224, 100, 92, .9)); color: #3a0d0a; border: 0; font-weight: 800; }
+.button.danger:hover { box-shadow: 0 8px 22px rgba(255, 157, 144, .35); transform: translateY(-1px); }
+@media (max-width: 480px) { .ux-confirm-actions { flex-direction: column-reverse; } .ux-confirm-actions .button { width: 100%; } }
+
+/* ---------- ripple (onda ao clicar) ---------- */
+.ux-ripple { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255, 255, 255, .4), transparent 70%); transform: scale(0); opacity: .9; animation: ux-ripple .55s ease-out forwards; }
+@keyframes ux-ripple { to { transform: scale(1); opacity: 0; } }
+
+/* ---------- esqueletos de carregamento (skeleton) ----------
+   Uso: <div class="skeleton" style="height:18px;width:60%"></div>  */
+.skeleton { position: relative; overflow: hidden; border-radius: 10px; background: var(--soft); min-height: 14px; }
+.skeleton:after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .12), transparent); animation: ux-shimmer 1.4s ease-in-out infinite; }
+@keyframes ux-shimmer { to { transform: translateX(100%); } }
+.skeleton-stack { display: grid; gap: 10px; }
+
+/* ---------- estados vazio e de erro ---------- */
+.ux-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 18px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 18px; background: var(--card); }
+.ux-empty b { color: var(--ink); font-size: 16px; }
+.ux-empty .ux-empty-icon { font-size: 28px; opacity: .9; }
+.ux-error { border-color: rgba(255, 157, 144, .45); background: rgba(255, 157, 144, .08); }
+
+/* ---------- foco visível para quem usa o teclado ---------- */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 3px solid rgba(94, 224, 189, .55); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ux-toast { transition: opacity .15s; transform: none; }
+  .ux-ripple, .skeleton:after { animation: none; }
+}
+
+/* =========================================================================
+   FERRAMENTAS DO CABEÇALHO: botão de privacidade (olho) e botão de perfil (avatar)
+   ========================================================================= */
+.icon-btn {
+  width: 42px; height: 42px; display: inline-grid; place-items: center; padding: 0; cursor: pointer;
+  color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 50%;
+  transition: transform .2s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+}
+.icon-btn:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 8px 22px rgba(94, 224, 189, .25); }
+.icon-btn svg { display: block; }
+.icon-btn .slash { opacity: 0; transition: opacity .2s; }
+.icon-btn.is-off, .eye-btn.is-off { color: var(--primary); }
+.icon-btn.is-off .slash, .eye-btn.is-off .slash { opacity: 1; }
+
+/* olho pequeno no canto de cada cartão de totais */
+.summary-card.has-eye { position: relative; }
+.eye-btn { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; transition: color .2s, background .2s, transform .2s; }
+.eye-btn:hover { color: var(--ink); background: var(--soft); transform: scale(1.08); }
+.eye-btn .slash { opacity: 0; }
+
+/* gráficos desfocados quando os valores estão ocultos */
+html[data-hide-values] .bar-chart, html[data-hide-values] .cat-bar, html[data-hide-values] .cmp-row .cat-bar { filter: blur(7px); pointer-events: none; transition: filter .22s ease; }
+
+/* botão circular de perfil (avatar) */
+.avatar-btn {
+  position: relative; width: 44px; height: 44px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
+  color: var(--ink); font-weight: 800; font-size: 15px; letter-spacing: .02em; text-decoration: none; overflow: visible;
+  background: linear-gradient(135deg, rgba(94, 224, 189, .32), rgba(100, 150, 255, .28));
+  border: 1px solid rgba(94, 224, 189, .55);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 0 rgba(94, 224, 189, .0), 0 6px 18px rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .25);
+  transition: transform .2s ease, box-shadow .25s ease, border-color .2s ease;
+  animation: ux-breathe 5s ease-in-out infinite;
+}
+.avatar-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.avatar-btn:hover, .avatar-btn:focus-visible { transform: scale(1.06); border-color: var(--primary); box-shadow: 0 0 0 4px rgba(94, 224, 189, .16), 0 0 26px rgba(94, 224, 189, .45), inset 0 1px 0 rgba(255, 255, 255, .3); animation: none; }
+/* brilho "a respirar", muito discreto */
+@keyframes ux-breathe { 0%, 100% { box-shadow: 0 0 0 0 rgba(94, 224, 189, 0), 0 6px 18px rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .25); } 50% { box-shadow: 0 0 0 5px rgba(94, 224, 189, .10), 0 6px 18px rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .25); } }
+/* tooltip "Área pessoal" */
+.avatar-btn[data-tip]:after, .icon-btn[data-tip]:after {
+  content: attr(data-tip); position: absolute; top: calc(100% + 10px); right: 0; padding: 5px 10px; border-radius: 10px; white-space: nowrap; font-size: 12px; font-weight: 700;
+  color: var(--ink); background: var(--glass); border: 1px solid var(--glass-border); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .2s, transform .2s; z-index: 5;
+}
+.avatar-btn:hover:after, .avatar-btn:focus-visible:after, .icon-btn[data-tip]:hover:after, .icon-btn[data-tip]:focus-visible:after { opacity: 1; transform: none; }
+.icon-btn[data-tip] { position: relative; }
+@media (prefers-reduced-motion: reduce) { .avatar-btn { animation: none; } .icon-btn, .eye-btn, .avatar-btn { transition: none; } }
+
+/* ---------- Google Calendar (cartão e emblemas) ---------- */
+.g-about { margin: 8px 0 4px; font-size: 13px; }
+.g-scopes { margin: 4px 0 8px; padding-left: 18px; font-size: 13.5px; line-height: 1.5; }
+.g-fs { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin: 10px 0; display: grid; gap: 8px; }
+.g-fs legend { padding: 0 6px; color: var(--muted); font-size: 12.5px; font-weight: 700; }
+.g-cals { display: grid; gap: 6px; }
+.g-uri { font-size: 12px; letter-spacing: 0; }
+#google-panel .form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.g-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; color: #87b9ff; border: 1px solid rgba(135, 185, 255, .5); background: rgba(135, 185, 255, .1); vertical-align: middle; }
+.g-badge.sent { color: var(--muted); border-color: var(--line); background: var(--soft); }
+
+/* O atributo hidden tem de ganhar sempre: sem isto, regras como "label { display: grid }" mostravam elementos escondidos. */
+[hidden] { display: none !important; }
+
+/* texto só para leitores de ecrã */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ---------- marca Lumina ---------- */
+.brand-eyebrow { display: flex; align-items: center; gap: 8px; }
+.brand-eyebrow img { display: block; height: 21px; width: auto; filter: drop-shadow(0 0 8px rgba(94, 224, 189, .35)); }
+.brand-logo { display: block; height: 33px; width: auto; filter: drop-shadow(0 0 10px rgba(94, 224, 189, .3)); }
+
+/* ---------- uniformidade: link "Saltar para o conteúdo", botões-link e barras de scroll ---------- */
+/* O link só aparece quando se carrega em Tab (acessibilidade); antes aparecia sem estilo no topo da página. */
+.skip-link { position: fixed; left: 16px; top: -64px; z-index: 200; padding: 10px 16px; border-radius: 12px; font-weight: 700; text-decoration: none;
+  color: var(--ink); background: var(--glass); border: 1px solid var(--primary); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: top .2s ease; }
+.skip-link:focus { top: 14px; }
+a.button, a.button:hover { text-decoration: none; }
+/* barras de scroll finas e no tom do sistema (em vez das brancas do navegador) */
+* { scrollbar-width: thin; scrollbar-color: rgba(94, 224, 189, .4) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(94, 224, 189, .35); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(94, 224, 189, .6); background-clip: padding-box; border: 2px solid transparent; }
+
+/* =========================================================================
+   GRÁFICOS (período e tipo) E RELATÓRIO/PDF
+   ========================================================================= */
+/* botões segmentados: o mesmo estilo do seletor de período dos painéis */
+.seg { display: inline-flex; padding: 4px; gap: 4px; border-radius: 14px; background: var(--soft); border: 1px solid var(--line); }
+.seg button { padding: 7px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: color .2s, background .2s; }
+.seg button:hover { color: var(--ink); }
+.seg button.on { color: var(--primary); background: rgba(94, 224, 189, .14); box-shadow: inset 0 0 0 1px rgba(94, 224, 189, .45); }
+.chart-controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.gf-svg { display: block; width: 100%; height: auto; max-height: 260px; color: var(--muted); }
+.bar-chart.is-lines { display: block; height: auto; padding: 8px 5px 0; }
+.gf-chart { color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+html[data-hide-values] .gf-chart { filter: blur(7px); pointer-events: none; }
+
+/* cabeçalho do relatório (também sai no PDF) */
+.report-header { display: flex; align-items: center; gap: 18px; padding: 4px 4px 16px; margin-bottom: 16px; border-bottom: 2px solid var(--brand, var(--primary)); }
+.report-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; letter-spacing: -.01em; }
+.report-brand img { display: block; height: 40px; width: auto; }
+.report-title { flex: 1; }
+.report-title h3 { margin: 0; font-size: 20px; } .report-title p { margin: 2px 0 0; color: var(--muted); }
+.report-company-logo { display: inline-grid; place-items: center; padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, .92); }
+.report-company-logo img { display: block; max-height: 44px; max-width: 150px; }
+.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.report-grid .report-summary { margin-bottom: 14px; }
+.report-chart-box .panel-heading { align-items: center; margin-bottom: 10px; }
+.report-chart-box .panel-heading h3 { margin: 0; }
+.report-foot { margin: 14px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+@media (max-width: 760px) { .report-grid { grid-template-columns: 1fr; } .report-header { flex-wrap: wrap; } }
+
+/* PDF: página A4, cores do gráfico preservadas, blocos sem cortes a meio */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .report-panel > .eyebrow, .report-panel > h2 { display: none !important; }
+  .report-header { border-bottom-color: var(--brand, #1f9d82); }
+  .report-brand, .report-title h3 { color: #0b1f3a !important; }
+  .report-title p, .report-foot { color: #444 !important; }
+  .report-summary, .report-chart-box { break-inside: avoid; page-break-inside: avoid; }
+  .gf-svg, .gf-chart { color: #333 !important; }
+  .gf-chart { border-bottom-color: #ccc; }
+  .report-company-logo { background: #fff; border: 1px solid #ddd; }
+  .legend { color: #333 !important; }
+  html[data-hide-values] .gf-chart { filter: none; }
+  .report-grid { grid-template-columns: 1fr 1fr !important; }                    /* duas colunas também no papel */
+  .report-line .positive, .positive { color: #15795f !important; }                /* mesmos tons, um pouco mais escuros para ler no papel */
+  .report-line .negative, .negative { color: #b83a30 !important; }
+}
+
+/* ---------- aviso "confirma o teu email" ---------- */
+.verify-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 0 0 18px; padding: 12px 18px; border-radius: 16px;
+  border: 1px dashed rgba(255, 212, 119, .55); background: rgba(255, 212, 119, .07); font-size: 14px; }
+.verify-banner p { margin: 0; flex: 1 1 320px; line-height: 1.5; }
+
+/* ---------- próximas datas fiscais (Visão geral) ---------- */
+.fiscal-card { margin-bottom: 18px; }
+.fiscal-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+.fiscal-item { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); }
+.fiscal-date { display: grid; min-width: 64px; line-height: 1.25; }
+.fiscal-date b { font-size: 15px; } .fiscal-date small, .fiscal-text small { color: var(--muted); font-size: 12.5px; }
+.fiscal-text { display: grid; flex: 1; gap: 2px; }
+.fiscal-kind { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--primary); border: 1px solid rgba(94, 224, 189, .45); }
+.fiscal-note { margin: 12px 0 0; font-size: 13px; }
+
+/* ---------- registo rápido (+) ---------- */
+.quick-fab { position: fixed; right: 24px; bottom: 96px; z-index: 25; width: 52px; height: 52px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  color: #052127; background: linear-gradient(135deg, var(--primary), #8cffe1); box-shadow: 0 10px 26px rgba(67, 217, 176, .38); transition: transform .2s ease, box-shadow .2s ease; }
+.quick-fab:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 14px 30px rgba(67, 217, 176, .5); }
+body:has(#profile-modal:not(.hidden)) .quick-fab, body:has(#password-modal:not(.hidden)) .quick-fab, html.menu-open .quick-fab { display: none; }
+.quick-type { margin: 6px 0 12px; display: flex; } .quick-type button { flex: 1; padding: 10px 12px; font-size: 15px; }
+@media print { .quick-fab { display: none !important; } }
+@media (prefers-reduced-motion: reduce) { .quick-fab { transition: none; } }
+
+/* ---------- pesquisa global (Ctrl+K) ---------- */
+.pal { display: grid; gap: 10px; min-width: min(560px, 82vw); }
+.pal input { width: 100%; font-size: 17px; padding: 14px 16px; }
+.pal-list { list-style: none; margin: 0; padding: 0; max-height: 52vh; overflow-y: auto; display: grid; gap: 2px; }
+.pal-group { padding: 10px 12px 4px; color: var(--primary); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.pal-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
+.pal-item.on { background: rgba(94, 224, 189, .12); border-color: rgba(94, 224, 189, .4); }
+.pal-ico { width: 24px; text-align: center; } .pal-text { display: grid; min-width: 0; } .pal-text small { color: var(--muted); font-size: 12.5px; }
+.pal-empty, .pal-hint { margin: 0; padding: 8px 12px; color: var(--muted); font-size: 13px; }
+
+/* ---------- contas recorrentes ---------- */
+.recurring-card { margin-top: 18px; }
+.recurring-list { list-style: none; margin: 10px 0 14px; padding: 0; display: grid; gap: 8px; }
+.recurring-item { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 11px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); }
+.recurring-item.paused { opacity: .65; }
+.recurring-main { display: grid; flex: 1 1 220px; gap: 2px; } .recurring-main small { color: var(--muted); font-size: 12.5px; }
+.recurring-next { font-size: 13px; color: var(--muted); } .recurring-next b { color: var(--ink); }
+.recurring-actions { display: flex; gap: 8px; }
+
+/* ---------- fecho do dia ---------- */
+.quick-method { margin: 0 0 12px; display: flex; flex-wrap: wrap; } .quick-method button { flex: 1 1 auto; padding: 8px 10px; font-size: 13.5px; }
+.closing-totals { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 6px; }
+.closing-totals li { display: flex; justify-content: space-between; gap: 14px; padding: 9px 12px; border-radius: 12px; background: var(--soft); border: 1px solid var(--line); }
+.closing-diff { min-height: 1.4em; margin: 0 0 10px; font-weight: 700; } .closing-diff.ok, .closing-recent .ok { color: var(--primary); } .closing-diff.off, .closing-recent .off { color: var(--red); }
+.closing-warn { font-size: 13px; margin: 0 0 10px; }
+.closing-recent { margin-top: 14px; font-size: 14px; } .closing-recent summary { cursor: pointer; color: var(--muted); }
+.closing-recent ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; } .closing-recent li { display: flex; justify-content: space-between; gap: 12px; }
+
+/* ---------- orçamentos por categoria ---------- */
+.budgets-card { margin-bottom: 18px; }
+.budget-list { list-style: none; margin: 8px 0 14px; padding: 0; display: grid; gap: 10px; }
+.budget-item { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); display: grid; gap: 8px; }
+.budget-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.budget-top span { color: var(--muted); font-size: 14px; }
+.budget-bar { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .09); overflow: hidden; }
+.budget-bar span { display: block; height: 100%; border-radius: 99px; background: var(--primary); transition: width .3s ease; }
+.budget-warn .budget-bar span { background: #ffd477; } .budget-over .budget-bar span { background: var(--red); }
+.budget-over { border-color: rgba(255, 127, 115, .5); } .budget-warn { border-color: rgba(255, 212, 119, .45); }
+.budget-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; } .budget-bottom small { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .budget-bar span { transition: none; } }
+
+/* ---------- anexos (recibos e faturas) ---------- */
+.attach-btn.has-files { color: var(--primary); border-color: rgba(94, 224, 189, .55); }
+.attach-list { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 8px; max-height: 44vh; overflow-y: auto; }
+.attach-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--soft); }
+.attach-item img { display: block; width: 56px; height: 56px; object-fit: cover; border-radius: 10px; }
+.attach-pdf { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 10px; font-weight: 800; font-size: 13px; color: var(--red); border: 1px solid rgba(255, 127, 115, .5); }
+.attach-meta { display: grid; flex: 1; min-width: 0; } .attach-meta a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .attach-meta small { color: var(--muted); }
+.attach-add { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 4px; } .attach-pick { cursor: pointer; }
+.attach-hint { font-size: 13px; margin: 6px 0 0; }
+
+/* ---------- importar CSV ---------- */
+.imp-pick { cursor: pointer; margin: 6px 0; }
+.imp-file { margin: 0 0 8px; } .imp-map { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin: 8px 0; } .imp-map legend { padding: 0 6px; font-weight: 700; }
+.imp-map-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 10px; } .imp-map label, .imp-opts label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 700; }
+.imp-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.imp-sum { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; } .imp-sum span { padding: 4px 12px; border-radius: 999px; font-size: 13px; }
+.chip-err { color: var(--red); border: 1px solid rgba(255, 127, 115, .5); border-radius: 999px; }
+.imp-table { min-width: 520px; font-size: 13.5px; } .imp-errs { margin: 10px 0; font-size: 13.5px; } .imp-errs ul { margin: 6px 0 0; padding-left: 20px; color: var(--muted); } .imp-errs summary { cursor: pointer; font-weight: 700; color: var(--red); }
+.imp-done { text-align: center; padding: 10px 0; } .imp-done h3 { margin: 0 0 8px; }
+@media (max-width: 560px) { .imp-opts { grid-template-columns: 1fr; } }
+
+/* nome do utilizador junto à fotografia: mesma letra e cores do resto do cabeçalho, alinhado ao centro da foto */
+.user-name-side { display: inline-flex; align-items: center; gap: 6px; max-width: 190px; min-width: 0; color: var(--ink); font-weight: 700; font-size: 14px; line-height: 1.2; text-decoration: none; }
+.user-name-side .un-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.user-name-side:hover .un-name, .user-name-side:focus-visible .un-name { color: var(--primary); }
+.user-name-side .role-chip { margin-left: 0; flex: none; }
+@media (max-width: 640px) { .user-name-side { max-width: 96px; font-size: 13px; } .user-name-side .role-chip { display: none; } }

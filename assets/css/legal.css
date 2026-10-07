@@ -1,0 +1,70 @@
+/* =========================================================================
+   PÁGINAS LEGAIS, RODAPÉ E AVISO DE COOKIES  (assets/css/legal.css)
+   -------------------------------------------------------------------------
+   Mesmo vidro, cores, tipografia e cantos do resto do Lumina (variáveis do tema).
+   O rodapé tem duas versões: "full" (página inicial) e "compact" (painel, Área pessoal e
+   páginas legais). Não aparece na impressão (.no-print).
+   ========================================================================= */
+
+/* ---------- documento legal ---------- */
+.legal { padding-top: 8px; padding-bottom: 64px; }
+.legal-doc { max-width: 860px; margin: 0 auto; }
+.legal-doc h1 { margin: 4px 0 6px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.02em; }
+.legal-doc h2 { margin: 30px 0 8px; font-size: 19px; letter-spacing: -.01em; }
+.legal-doc p, .legal-doc li { line-height: 1.7; }
+.legal-doc ul { padding-left: 20px; display: grid; gap: 6px; margin: 8px 0; }
+.legal-doc a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.legal-doc code { padding: 1px 7px; border-radius: 8px; background: var(--soft); border: 1px solid var(--line); font-size: .9em; }
+.legal-note { margin: 14px 0 6px; padding: 11px 14px; border-radius: 14px; border: 1px dashed rgba(255, 212, 119, .55); background: rgba(255, 212, 119, .07); font-size: 14px; }
+.legal-table-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 16px; }
+.legal-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.legal-table th { text-align: left; padding: 11px 14px; color: var(--muted); font-size: 12.5px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.legal-table td { padding: 11px 14px; vertical-align: top; border-bottom: 1px solid var(--line); line-height: 1.5; }
+.legal-table tr:last-child td { border-bottom: 0; }
+.lf-home { text-decoration: none; color: var(--ink); font-size: 20px; }
+.lf-home img { height: 34px; }
+
+/* ---------- rodapé ---------- */
+.lum-footer { margin-top: 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+.lum-footer a { color: var(--muted); text-decoration: none; transition: color .2s; }
+.lum-footer a:hover, .lum-footer a:focus-visible { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.lf-grid { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 34px 0 24px; display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 28px; }
+.lf-logo { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: 20px; letter-spacing: -.01em; }
+.lf-logo img { display: block; height: 40px; width: auto; filter: drop-shadow(0 0 10px rgba(94, 224, 189, .3)); }
+.lf-brand p { margin: 10px 0 0; max-width: 280px; line-height: 1.5; }
+.lf-title { margin: 0 0 12px; color: var(--primary); font-size: 11px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.lf-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.lf-bar { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 16px 0 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--line); }
+.lum-footer.compact { margin-top: 36px; }
+.lum-footer.compact .lf-bar { border-top: 0; }
+.lf-legal { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+.lf-top { flex: none; width: 40px; height: 40px; display: inline-grid; place-items: center; padding: 0; cursor: pointer; color: var(--primary); background: var(--soft); border: 1px solid rgba(94, 224, 189, .5); border-radius: 50%; transition: transform .2s, box-shadow .22s; }
+.lf-top:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(94, 224, 189, .25); }
+@media (max-width: 860px) { .lf-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .lf-grid { grid-template-columns: 1fr; } .lf-bar { flex-direction: column; align-items: flex-start; } }
+
+/* ---------- aviso de cookies (informativo: só há armazenamento essencial) ---------- */
+.cookie-note { position: fixed; left: 20px; bottom: 20px; z-index: 40; width: min(380px, calc(100vw - 40px)); padding: 16px 18px; border-radius: 20px;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .14); opacity: 0; transform: translateY(14px); transition: opacity .22s ease, transform .24s ease; }
+.cookie-note.in { opacity: 1; transform: none; }
+.cookie-note p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.55; }
+.cookie-note-actions { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+.cookie-note-actions a { color: var(--primary); font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .cookie-note, .lf-top { transition: none; transform: none; } }
+
+/* ---------- páginas de conta (recuperar palavra-passe, confirmar email) ---------- */
+.account-form { display: grid; gap: 14px; max-width: 420px; margin-top: 18px; }
+.account-form label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+.account-form input[type=email], .account-form input[type=password] { width: 100%; }
+.account-msg { min-height: 1.4em; margin: 0; font-size: 14px; }
+.account-msg.ok { color: var(--primary); }
+.account-msg.error { color: var(--red); }
+.account-result { margin: 18px 0 6px; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line); background: var(--soft); }
+.legal-crumbs { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
+.legal-crumbs a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+
+
+/* Área de toque confortável nos links do rodapé (mínimo 24 px, WCAG 2.2): o texto não muda, só a zona clicável */
+.lf-legal a, .lf-col a { display: inline-block; padding: 5px 2px; min-height: 24px; }
+.lf-col ul { gap: 4px; }

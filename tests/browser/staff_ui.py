@@ -1,0 +1,192 @@
+import os
+import sys, asyncio, json, re; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from playwright.async_api import async_playwright
+from ai_lib import sql
+from navlib import nav
+import staff_seed
+BASE = os.environ.get('LUMINA_URL', 'http://127.0.0.1:8080').rstrip('/')
+ok = lambda c: 'PASSOU' if c else '*** FALHOU ***'
+errs = []
+bad = []
+
+async def toasts(pg): return await pg.evaluate("[...document.querySelectorAll('.ux-toast')].map(t=>t.innerText.replace(/\\n×/,'').trim()).concat([document.querySelector('#status')?.innerText||''])")
+async def login(pg, email, pw):
+    await pg.goto(BASE + '/index.php'); await pg.fill('#login-form [name=email]', email); await pg.fill('#login-form [name=password]', pw)
+    await pg.click('#login-form button[type=submit]'); await pg.wait_for_url('**/dashboard.php'); await pg.wait_for_timeout(1800)
+async def newpage(ctx):
+    pg = await ctx.new_page()
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.on('response', lambda r: bad.append((r.status, r.url.split('127.0.0.1:8080')[-1][:60])) if r.status >= 400 and 'open-meteo' not in r.url else None)
+    pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' and 'open-meteo' not in m.text and 'ERR_FAILED' not in m.text else None)
+    return pg
+async def api_get(pg, path): return await pg.evaluate("async p => (await fetch('/api/'+p,{credentials:'same-origin'})).json()", path)
+
+async def main():
+    sql("DELETE FROM login_attempts"); ids = staff_seed.seed(); O = staff_seed.owner(); ANA, RUI, EVA, TIAGO = [int(ids[e[0]]) for e in staff_seed.EMP]
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        init = "localStorage.setItem('gf-reptil','off');localStorage.setItem('lumina-aviso-cookies','1')"
+        octx = await b.new_context(locale='pt-PT', viewport={'width': 1366, 'height': 900}); await octx.add_init_script(init); op = await newpage(octx)
+        await login(op, 'maria@teste.pt', '123456')
+
+        print('=== LÍDER: SINO, ABAS E VISÃO GERAL ===')
+        print('sino no cabeçalho com contador:', await op.get_attribute('#notif-badge','data-n'), ok(await op.is_visible('#notif-badge')))
+        tabs = await op.eval_on_selector_all('#main-menu .nav-tab', 'els=>els.map(e=>e.textContent.trim())')
+        print('abas «Funcionários» e «Equipa» existem; «Mensagens e tarefas» não:', ok('Funcionários' in tabs and 'Equipa' in tabs and 'Mensagens e tarefas' not in tabs))
+        ov = await op.inner_text('#staff-overview')
+        api = await api_get(op, 'staff.php'); S = api['summary']
+        print('Visão geral: cartão «A tua equipa» com os totais da API:', ok('a tua equipa' in ov.lower() and f"{S['total']}" in ov and 'entradas recentes' in ov.lower() and 'atividades recentes' in ov.lower()))
+
+        print('\n=== LÍDER: ABA FUNCIONÁRIOS ===')
+        await nav(op, 'staff'); await op.wait_for_selector('.staff-card'); await op.wait_for_timeout(500)
+        print('resumo com 6 indicadores:', await op.locator('.staff-stat').count(), ok(await op.locator('.staff-stat').count() == 6))
+        txt = await op.inner_text('#staff-summary')
+        print('   total, online, produtividade, vendas, melhor desempenho e metas:', ok(all(k in txt for k in ['Funcionários', 'Online', 'Produtividade média', 'Vendas', 'Melhor desempenho', 'Metas cumpridas'])))
+        pan = await op.inner_text('#staff-panels')
+        print('   atividades recentes, entradas recentes e pendentes (avisos/mensagens):', ok('ATIVIDADES RECENTES' in pan.upper() and 'ENTRADAS RECENTES' in pan.upper() and 'por ler' in pan.lower()))
+        print('cartões = funcionários ativos da API:', await op.locator('.staff-card').count(), '/', S['total'], ok(await op.locator('.staff-card').count() == S['total']))
+        card = lambda n: op.locator('.staff-card', has_text=n)
+        ana = await card('Ana Silva').inner_text(); ana_l = ana.lower()
+        for k in ['Produtividade', 'Desempenho geral', 'Vendas', 'Objetivos cumpridos', 'Tarefas concluídas', 'Última atividade', 'Última entrada no sistema', 'Vendedora']:
+            if k.lower() not in ana_l: print('   FALTA no cartão:', k, '*** FALHOU ***')
+        print('cartão da Ana tem todos os campos pedidos:', ok(all(k.lower() in ana_l for k in ['Produtividade', 'Desempenho geral', 'Vendas', 'Objetivos cumpridos', 'Tarefas concluídas', 'Última atividade', 'Última entrada no sistema', 'Vendedora'])))
+        photo = await card('Ana Silva').locator('img.gft-avatar').count(); ini = await card('Rui Costa').locator('.gft-initial').count()
+        print('   fotografia (Ana) e inicial quando não há foto (Rui):', photo, ini, ok(photo == 1 and ini == 1))
+        A_ = next(c for c in api['employees'] if c['id'] == ANA)
+        print('   números do cartão = API (vendas', A_['sales_count'], '| produtividade', A_['productivity'], '):', ok(f"{A_['sales_count']} ·" in ana and f"{A_['productivity']} %" in ana))
+        st = {n: (await card(n).locator('.status-chip').inner_text()).strip() for n in ['Ana Silva', 'Rui Costa', 'Eva Lopes', 'Tiago Reis']}
+        print('estados:', st, ok(st == {'Ana Silva': 'Online', 'Rui Costa': 'Ausente', 'Eva Lopes': 'Em pausa', 'Tiago Reis': 'Offline'}))
+        print('barras de progresso acessíveis (role=progressbar com nome):', ok(await card('Ana Silva').locator('[role=progressbar][aria-label^=Produtividade]').count() == 1))
+
+        print('\n=== LÍDER: FILTROS ===')
+        async def count_after(action):
+            await action; await op.wait_for_timeout(700); return await op.locator('.staff-card').count()
+        total = await op.locator('.staff-card').count()
+        n = await count_after(op.fill('#staff-filters [name=q]', 'ana')); print('nome «ana»:', n, ok(n == 1 and 'Ana Silva' in await op.inner_text('#staff-cards')))
+        await op.fill('#staff-filters [name=q]', ''); n = await count_after(op.select_option('#staff-filters [name=status]', 'pause')); print('estado «Em pausa»:', n, ok(n == 1 and 'Eva Lopes' in await op.inner_text('#staff-cards')))
+        n = await count_after(op.select_option('#staff-filters [name=status]', 'online')); print('estado «Online»:', n, ok(n >= 1 and 'Ana Silva' in await op.inner_text('#staff-cards') and 'Rui Costa' not in await op.inner_text('#staff-cards')))
+        await op.select_option('#staff-filters [name=status]', ''); n = await count_after(op.fill('#staff-filters [name=prod_min]', '50')); print('produtividade ≥ 50 %:', n, ok(n == 1 and 'Ana Silva' in await op.inner_text('#staff-cards')))
+        await op.fill('#staff-filters [name=prod_min]', ''); n = await count_after(op.fill('#staff-filters [name=perf_min]', '99')); print('desempenho ≥ 99 % (ninguém):', n, ok(n == 0 and 'Nenhum funcionário com estes filtros' in await op.inner_text('#staff-cards')))
+        await op.fill('#staff-filters [name=perf_min]', ''); n = await count_after(op.fill('#staff-filters [name=sales_min]', '3')); print('vendas ≥ 3:', n, ok(n >= 1 and 'Ana Silva' in await op.inner_text('#staff-cards')))
+        await op.fill('#staff-filters [name=sales_min]', ''); await op.wait_for_timeout(500)
+        opts = await op.eval_on_selector_all('#staff-filters [name=job] option', 'o=>o.map(x=>x.textContent)')
+        n = await count_after(op.select_option('#staff-filters [name=job]', 'Vendedor')); print('cargo «Vendedor» (lista de cargos:', len(opts), '):', n, ok(n >= 1 and 'Rui Costa' in await op.inner_text('#staff-cards') and 'Ana Silva' not in await op.inner_text('#staff-cards') and 'Vendedor' in opts))
+        await op.click('#staff-clear'); await op.wait_for_timeout(800); n = await op.locator('.staff-card').count(); print('«Limpar filtros» repõe todos:', n, ok(n == total))
+        await op.select_option('#staff-filters [name=sort]', 'sales'); await op.wait_for_timeout(800); first = await op.locator('.staff-card h3').first.inner_text(); print('ordenar por vendas: o 1.º é', first, ok(first.strip() == 'Ana Silva'))
+        await op.click('#staff-period [data-p=today]'); await op.wait_for_timeout(800); note = await op.inner_text('#staff-period-note'); print('período «Hoje»:', note, ok(re.fullmatch(r'\d\d/\d\d/\d{4} [aA] \d\d/\d\d/\d{4}', note) is not None and note[:10] == note[-10:]))
+        await op.click('#staff-period [data-p=custom]'); await op.wait_for_timeout(300); print('«Datas à escolha» mostra os campos De/Até:', ok(await op.is_visible('#staff-period [name=from]')))
+        await op.click('#staff-period [data-p=month]'); await op.wait_for_timeout(600); await op.click('#staff-clear'); await op.wait_for_timeout(700)
+
+        print('\n=== LÍDER: PERFIL DETALHADO ===')
+        await op.click('.staff-open >> text=Ana Silva'); await op.wait_for_selector('.staff-profile'); await op.wait_for_timeout(900)
+        pr = await op.inner_text('#staff-profile-view'); pr_l = pr.lower()
+        print('perfil: dados pessoais e profissionais:', ok(all(k.lower() in pr_l for k in ['Ana Silva', 'Vendedora', 'Vendas', 'st-ana@teste.pt', '+351 912 345 678', '10/03/2025', 'Online'])))
+        print('   métricas: produtividade, desempenho, vendas, valor total, metas, tarefas, horas:', ok(all(k.lower() in pr_l for k in ['Produtividade', 'Desempenho geral', 'Vendas realizadas', 'Valor total das vendas', 'Metas cumpridas', 'Tarefas concluídas', 'Horas de trabalho'])))
+        print('   botões: Enviar mensagem (com por ler), Nova tarefa, Definir meta, Observação:', ok(all(k.lower() in pr_l for k in ['Enviar mensagem', 'Nova tarefa', 'Definir meta', 'Observação'])), '| por ler:', await op.locator('.count-pill').inner_text())
+        figs = await op.locator('#profile-charts .bars-fig').count(); print('   4 gráficos (tarefas, vendas, valor, horas):', figs, ok(figs == 4))
+        for u_, n_ in (('week', 8), ('month', 6), ('day', 14)):
+            await op.click(f'[data-unit={u_}]'); await op.wait_for_timeout(250); k = await op.locator('#profile-charts .bars-fig').first.locator('.st-bar').count(); print(f'   escala {u_}: {k} barras', ok(k == n_))
+        lab = await op.get_attribute('#profile-charts .st-bars', 'aria-label'); print('   gráfico com descrição para leitores de ecrã:', ok(lab and lab.startswith('Tarefas concluídas:')))
+        print('   metas, tarefas, entradas e saídas, observações e conversa:', ok(all(k.lower() in pr_l for k in ['Metas', 'Tarefas', 'Entradas e saídas', 'Observações', 'Mensagens com Ana'])))
+        print('   histórico de mensagens (as 2 trocadas) com «Lida»:', ok('ana, consegues tratar' in pr_l and 'já estou a tratar' in pr_l and 'lida' in pr_l))
+        print('   «Como se calculam estes números» explica a fórmula:', ok(await op.locator('.how summary').count() == 1))
+
+        print('\n=== LÍDER: AÇÕES (tarefa, meta, observações, mensagem, anúncio) ===')
+        await op.click('.staff-actions [data-act=task]'); await op.wait_for_selector('.sf-form'); await op.wait_for_timeout(300)
+        print('janela «Nova tarefa»: foco no 1.º campo:', ok(await op.evaluate("document.activeElement.name") == 'title'))
+        await op.click('.sf-form [type=submit]'); await op.wait_for_timeout(250); print('   enviar vazio: mostra erro e não fecha:', ok(await op.is_visible('.sf-form .ap-form-error')))
+        await op.fill('.sf-form [name=title]', 'Reorganizar o armazém'); await op.fill('.sf-form [name=detail]', 'Prateleiras A e B'); await op.fill('.sf-form [name=due_date]', sql("SELECT DATE_ADD(CURDATE(), INTERVAL 2 DAY)")); await op.click('.sf-form [type=submit]'); await op.wait_for_timeout(1500)
+        print('   tarefa criada e visível:', ok('reorganizar o armazém' in (await op.inner_text('#staff-profile-view')).lower()), '| aviso:', (await toasts(op))[-1:])
+        print('   a Ana recebeu o aviso «Nova tarefa» (BD):', sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={ANA} AND type='task' AND title LIKE '%Reorganizar%'"), ok(sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={ANA} AND type='task' AND title LIKE '%Reorganizar%'") == '1'))
+        await op.click('.staff-actions [data-act=goal]'); await op.wait_for_selector('.sf-form'); await op.select_option('.sf-form [name=kind]', 'tasks_done'); await op.fill('.sf-form [name=target]', '8'); await op.click('.sf-form [type=submit]'); await op.wait_for_timeout(1500)
+        print('   meta «Tarefas concluídas» criada:', ok('tarefas concluídas' in (await op.inner_text('.goal-list')).lower()), '| avisos de meta (BD):', sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={ANA} AND type='goal'"))
+        await op.click('.staff-actions [data-act=note]'); await op.wait_for_selector('.sf-form'); await op.fill('.sf-form [name=body]', 'Precisa de melhorar a organização da caixa.'); await op.click('.sf-form [type=submit]'); await op.wait_for_timeout(1300)
+        await op.click('.staff-actions [data-act=note]'); await op.wait_for_selector('.sf-form'); await op.fill('.sf-form [name=body]', 'Excelente trabalho na montra!'); await op.check('.sf-form [name=shared]'); await op.click('.sf-form [type=submit]'); await op.wait_for_timeout(1300)
+        await op.wait_for_function("document.querySelector('.st-notes')?.innerText.includes('montra')", timeout=5000)
+        nl = await op.inner_text('.st-notes')
+        print('   observação privada e partilhada, com a etiqueta certa:', ok('privada' in nl.lower() and 'partilhada com o funcionário' in nl.lower()))
+        print('   só a partilhada avisou a Ana (comentário sobre o desempenho):', sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={ANA} AND type='feedback' AND body LIKE '%montra%'"), sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={ANA} AND type='feedback' AND body LIKE '%organização da caixa%'"), ok(sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={ANA} AND type='feedback' AND body LIKE '%montra%'") == '1' and sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={ANA} AND type='feedback' AND body LIKE '%organização%'") == '0'))
+        await op.click('.goal-list [data-act=goal-del] >> nth=0'); await op.wait_for_selector('.ux-confirm.show'); await op.click('.ux-confirm [data-yes]'); await op.wait_for_timeout(1300)
+        print('   apagar uma meta pede confirmação e apaga:', ok(sql(f"SELECT COUNT(*) FROM employee_goals WHERE employee_id={ANA}") == '2'))
+        await op.fill('#staff-chat textarea', 'Obrigada pelo esforço, Ana!\nContinua assim.'); await op.press('#staff-chat textarea', 'Enter'); await op.wait_for_timeout(1500)
+        last = op.locator('#staff-chat .msg.mine').last
+        print('   mensagem enviada com Enter (e quebra de linha mantida):', ok('Obrigada pelo esforço' in await last.inner_text() and await last.locator('br').count() == 1), '| estado:', (await last.locator('small').inner_text()).split('·')[-1].strip())
+        await op.select_option('#staff-chat [name=kind]', 'performance'); await op.fill('#staff-chat textarea', 'Metas do mês quase no fim.'); await op.click('#staff-chat [type=submit]'); await op.wait_for_timeout(1300)
+        print('   mensagem do tipo «Desempenho» com etiqueta:', ok('Desempenho' in await op.locator('#staff-chat .msg.mine').last.inner_text()))
+        await op.fill('#staff-chat textarea', '<img src=x onerror=alert(1)>'); await op.press('#staff-chat textarea', 'Enter'); await op.wait_for_timeout(1200)
+        print('   HTML na mensagem fica como TEXTO (sem injeção):', ok(await op.locator('#staff-chat img').count() == 0 and '<img src=x' in await op.locator('#staff-chat .msg.mine').last.inner_text()))
+        await op.click('[data-act=back]'); await op.wait_for_selector('.staff-card'); await op.wait_for_timeout(400)
+        await op.click('[data-act=back]') if False else None
+        await op.click('#staff-announce'); await op.wait_for_selector('.sf-form'); await op.fill('.sf-form [name=title]', 'Reunião sexta às 10h'); await op.fill('.sf-form [name=body]', 'Tragam os relatórios.'); await op.click('.sf-form [type=submit]'); await op.wait_for_timeout(1300)
+        print('anúncio enviado:', (await toasts(op))[-1:], ok(any('Anúncio enviado' in t for t in await toasts(op))), '| avisos na BD:', sql(f"SELECT COUNT(*) FROM notifications WHERE type='announcement' AND tenant_id={O}"))
+
+        print('\n=== FUNCIONÁRIA (Ana) EM PARALELO ===')
+        ectx = await b.new_context(locale='pt-PT', viewport={'width': 1366, 'height': 900}); await ectx.add_init_script(init); ep = await newpage(ectx)
+        await login(ep, 'st-ana@teste.pt', staff_seed.PW)
+        etabs = await ep.eval_on_selector_all('#main-menu .nav-tab', 'els=>els.map(e=>e.textContent.trim())')
+        print('abas da Ana:', etabs, ok('Mensagens e tarefas' in etabs and 'Funcionários' not in etabs and 'Equipa' not in etabs))
+        print('sino da Ana com avisos por ler:', await ep.get_attribute('#notif-badge','data-n'), ok(int(await ep.get_attribute('#notif-badge','data-n')) >= 5))
+        r = await ep.evaluate("async()=> (await fetch('/api/staff.php',{credentials:'same-origin'})).status"); print('Ana NÃO acede à API do líder:', r, ok(r == 403))
+        await ep.click('#notif-btn'); await ep.wait_for_selector('.notif-item'); tt = await ep.inner_text('#notif-list')
+        print('avisos da Ana: tarefa, meta, comentário, anúncio e mensagem:', ok(all(k in tt for k in ['Nova tarefa: Reorganizar', 'meta', 'comentário sobre o teu desempenho', 'Reunião sexta às 10h', 'nova mensagem de Maria'])))
+        await ep.keyboard.press('Escape'); await ep.wait_for_timeout(400); print('   Esc fecha o painel e devolve o foco ao sino:', ok(await ep.evaluate("document.activeElement.id") == 'notif-btn'))
+        await nav(ep, 'work'); await ep.wait_for_selector('.work-grid'); await ep.wait_for_timeout(1000)
+        wk = await ep.inner_text('#work-root'); wk_l = wk.lower()
+        print('«Mensagens e tarefas»: estado, desempenho, tarefas, metas, comentários, conversa, transparência:', ok(all(k.lower() in wk_l for k in ['O teu estado', 'O teu desempenho', 'As tuas tarefas', 'As tuas metas', 'Comentários do teu líder', 'Mensagens com o teu líder', 'O que o teu líder pode ver'])))
+        print('   só vê o comentário PARTILHADO, nunca o privado:', ok('excelente trabalho na montra' in wk_l and 'organização da caixa' not in wk_l))
+        print('   a conversa mostra as mensagens do líder:', ok('Obrigada pelo esforço' in wk and 'Metas do mês' in wk))
+        await ep.click('.task-check:not(.on) >> nth=0'); await ep.wait_for_timeout(1500)
+        print('   concluir uma tarefa:', (await toasts(ep))[-1:], ok(sql(f"SELECT COUNT(*) FROM employee_tasks WHERE employee_id={ANA} AND status='done'") == '4'))
+        await ep.click('.work-status [data-act=pause]'); await ep.wait_for_timeout(1300)
+        print('   «Fazer uma pausa» muda o estado para «Em pausa»:', ok('Em pausa' in await ep.inner_text('.work-status')))
+        r = await api_get(op, 'staff.php'); sa = next(c for c in r['employees'] if c['id'] == ANA)['state']; print('   e o líder vê «pause»:', sa, ok(sa == 'pause'))
+        await ep.click('.work-status [data-act=pause]'); await ep.wait_for_timeout(1000)
+        await ep.fill('#work-chat textarea', 'Combinado, entrego até sexta.'); await ep.press('#work-chat textarea', 'Enter'); await ep.wait_for_timeout(1400)
+        print('   a Ana responde ao líder:', ok('Combinado, entrego' in await ep.locator('#work-chat .msg.mine').last.inner_text()))
+        await ep.evaluate("window.GFNotif.refresh()"); await ep.wait_for_timeout(900)
+        print('   ao abrir a conversa, os avisos de mensagem ficam lidos e o contador desce:', ok(int(await ep.get_attribute('#notif-badge','data-n') or '0') < 6) if await ep.is_visible('#notif-badge') else ok(True))
+
+        print('\n=== AVISOS EM TEMPO REAL PARA O LÍDER ===')
+        sql("DELETE FROM login_attempts"); ctx3 = await b.new_context(locale='pt-PT', viewport={'width': 1000, 'height': 800}); await ctx3.add_init_script(init); p3 = await newpage(ctx3)
+        await login(p3, 'st-rui@teste.pt', staff_seed.PW)
+        await op.evaluate("window.GFNotif.refresh()"); await op.wait_for_selector('.notif-card', timeout=6000); await op.wait_for_timeout(600)
+        rc = op.locator('.notif-card', has_text='Rui Costa entrou no sistema'); card_t = await rc.inner_text()
+        print('o líder vê um cartão de vidro «Rui Costa entrou no sistema» (com ações):', ok('Marcar como lido' in card_t and 'Ver' in card_t))
+        print('   (a Ana não gerou aviso repetido: só 1 de login dela, e o do Rui é novo)', sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={O} AND type='login' AND actor_id={RUI}"), ok(sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={O} AND type='login' AND actor_id={RUI}") == '1'))
+        b0 = int(await op.get_attribute('#notif-badge','data-n')); await rc.locator('[data-act=read]').click(); await op.wait_for_timeout(900); b1 = int(await op.get_attribute('#notif-badge','data-n') or '0')
+        print('«Marcar como lido» no cartão: contador', b0, '→', b1, ok(b1 == b0 - 1)); await op.wait_for_timeout(500)
+        print('o cartão do Rui desaparece:', ok(await op.locator('.notif-card', has_text='Rui Costa entrou').count() == 0))
+        await op.click('#notif-btn'); await op.wait_for_selector('.notif-item'); await op.click('#notif-readall'); await op.wait_for_timeout(800)
+        print('«Marcar todos como lidos»: o contador some:', ok(not await op.is_visible('#notif-badge')) and sql(f"SELECT COUNT(*) FROM notifications WHERE user_id={O} AND read_at IS NULL") == '0')
+        await op.keyboard.press('Escape'); await op.wait_for_timeout(300)
+        await ep.evaluate("fetch('/api/messages.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({body:'Chefe, posso sair mais cedo?',csrf:window.csrf})})") if False else None
+        await ep.fill('#work-chat textarea', 'Chefe, posso sair mais cedo?'); await ep.press('#work-chat textarea', 'Enter'); await ep.wait_for_timeout(1000)
+        await op.evaluate("window.GFNotif.refresh()"); await op.wait_for_selector('.notif-card', timeout=6000); await op.wait_for_timeout(400)
+        print('nova mensagem da Ana: cartão no líder:', ok(await op.locator('.notif-card', has_text='nova mensagem de Ana Silva').count() >= 1))
+        await op.locator('.notif-card', has_text='nova mensagem de Ana Silva').locator('[data-act=open]').click(); await op.wait_for_selector('.staff-profile'); await op.wait_for_timeout(1200)
+        print('   «Ver» abre o perfil da Ana com a conversa e a mensagem:', ok('Mensagens com Ana' in await op.inner_text('#staff-profile-view') and 'posso sair mais cedo' in await op.inner_text('#staff-chat')))
+        print('   as mensagens da Ana ficaram lidas:', sql(f"SELECT COUNT(*) FROM team_messages WHERE from_user={ANA} AND read_at IS NULL"), ok(sql(f"SELECT COUNT(*) FROM team_messages WHERE from_user={ANA} AND read_at IS NULL") == '0'))
+        await op.click('[data-act=back]'); await op.wait_for_timeout(500)
+        # a Ana vê «Lida» nas suas mensagens
+        await nav(ep, 'overview') if False else None
+
+        print('\n=== TECLADO E LEITORES DE ECRÃ ===')
+        await op.focus('#notif-btn'); await op.keyboard.press('Enter'); await op.wait_for_timeout(500)
+        print('o sino abre com Enter e o foco entra no painel:', ok(await op.evaluate("document.querySelector('#notif-panel').contains(document.activeElement)")))
+        await op.keyboard.press('Escape'); await op.wait_for_timeout(400); print('   Esc fecha e devolve o foco:', ok(await op.evaluate("document.activeElement.id") == 'notif-btn'))
+        print('cada botão «ver perfil» tem nome acessível:', ok(await op.locator('.staff-open[aria-label^="Ver perfil de"]').count() == await op.locator('.staff-open').count()))
+
+        print('\n=== TELEMÓVEL (390 px) ===')
+        mctx = await b.new_context(locale='pt-PT', viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True); await mctx.add_init_script(init); mp = await newpage(mctx)
+        await login(mp, 'maria@teste.pt', '123456'); await nav(mp, 'staff'); await mp.wait_for_selector('.staff-card'); await mp.wait_for_timeout(600)
+        sw = await mp.evaluate("document.documentElement.scrollWidth"); print('lista: sem scroll horizontal:', sw, ok(sw <= 392))
+        cols = await mp.evaluate("getComputedStyle(document.querySelector('#staff-cards')).gridTemplateColumns.split(' ').length"); print('   cartões numa só coluna:', cols, ok(cols == 1))
+        await mp.click('.staff-open >> text=Ana Silva'); await mp.wait_for_selector('.staff-profile'); await mp.wait_for_timeout(900)
+        sw = await mp.evaluate("document.documentElement.scrollWidth"); print('perfil: sem scroll horizontal:', sw, ok(sw <= 392))
+        await mp.click('#notif-btn'); await mp.wait_for_timeout(500); bb = await mp.evaluate("(()=>{const r=document.querySelector('#notif-panel').getBoundingClientRect();return [r.left,r.right]})()"); print('painel do sino cabe no ecrã:', bb, ok(bb[0] >= 0 and bb[1] <= 391))
+        await b.close()
+    print('\nRESPOSTAS ≥ 400:', bad)
+    print('ERROS JS (fora os 403 provocados de propósito):', [e for e in errs if '403' not in e] or 'nenhum')
+    staff_seed.clean()
+
+asyncio.run(main())

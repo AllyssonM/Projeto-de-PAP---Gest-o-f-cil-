@@ -1,0 +1,229 @@
+/* =========================================================
+   LUMINA - style.css (com imagem de fundo + efeito vidro)
+   O vídeo está em assets/video (ver fundo-video.js); a imagem é só a alternativa
+   ========================================================= */
+
+:root{
+  --ink:#eef7f5;
+  --muted:#b9d0cc;
+  --line:rgba(255,255,255,.16);
+  --surface:rgba(15,40,50,.30);
+  --surface-strong:rgba(22,50,59,.84);
+  --bg:#07151d;
+  --primary:#5ee0bd;
+  --dark:#2ebd9b;
+  --red:#ff9d90;
+  --blue:#87b9ff;
+  --shadow:0 22px 70px rgba(0,0,0,.28);
+  --glass-border:rgba(255,255,255,.22);
+}
+
+*{box-sizing:border-box}
+
+/* ---------- FUNDO (vídeo em assets/video; esta imagem só aparece se o vídeo não puder reproduzir) ---------- */
+html{
+  min-height:100%;
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(135deg, rgba(7,21,29,.25), rgba(11,37,48,.20)),
+    url("../video/fundo-poster.webp");
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+}
+
+body{
+  min-height:100vh;
+  margin:0;
+  background:transparent;
+  color:var(--ink);
+  font:15px Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  position:relative;
+  overflow-x:hidden;
+}
+
+/* Brilhos coloridos atrás do vidro */
+body:before,body:after{
+  content:"";
+  position:fixed;
+  z-index:-1;
+  width:320px;
+  height:320px;
+  border-radius:50%;
+  filter:blur(12px);
+  opacity:.35;
+  pointer-events:none;
+}
+body:before{top:28%;left:-130px;background:#26c9a5}
+body:after{right:-130px;bottom:5%;background:#526df5}
+
+.hidden{display:none!important}
+
+/* ---------- LOGIN ---------- */
+.auth-shell{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:24px;
+  background:transparent;
+}
+
+/* ---------- EFEITO VIDRO (cartões, painéis, janelas) ---------- */
+.auth-card,.panel,.summary-card,.profile-dialog{
+  background:rgba(15,40,50,.30);
+  backdrop-filter:blur(16px) saturate(160%);
+  -webkit-backdrop-filter:blur(16px) saturate(160%);
+  border:1px solid var(--glass-border);
+  border-radius:22px;
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.14);
+  position:relative;
+  overflow:hidden;
+}
+.auth-card:before,.panel:before,.summary-card:before,.profile-dialog:before{
+  content:"";
+  position:absolute;
+  top:0;left:12%;right:12%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+}
+.auth-card{width:min(450px,100%);padding:34px}
+
+/* ---------- TEXTOS ---------- */
+.eyebrow{margin:0 0 7px;color:var(--primary);font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.muted,.message{color:var(--muted)}
+h1{font-size:clamp(28px,4vw,42px);margin:0 0 10px;letter-spacing:-.05em}
+h2{margin:0 0 18px;font-size:21px;letter-spacing:-.02em}
+
+/* ---------- ABAS ---------- */
+.auth-tabs,.tabs{display:flex;gap:8px;border-bottom:1px solid var(--line)}
+.auth-tabs{margin:25px 0 20px}
+.auth-tab,.nav-tab{border:0;background:transparent;padding:12px 14px;cursor:pointer;color:var(--muted);font-weight:700;transition:.2s}
+.auth-tab:hover,.nav-tab:hover{color:var(--ink)}
+.auth-tab.active,.nav-tab.active{color:var(--primary);border-bottom:2px solid var(--primary);text-shadow:0 0 18px rgba(94,224,189,.35)}
+
+/* ---------- FORMULÁRIOS ---------- */
+form{display:grid;gap:13px}
+label{display:grid;gap:7px;color:var(--muted);font-size:13px;font-weight:700}
+input,select,textarea{
+  width:100%;
+  padding:12px 13px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(255,255,255,.07);
+  color:var(--ink);
+  font:inherit;
+  outline:0;
+}
+option{background:#16313b;color:white}
+input::placeholder,textarea::placeholder{color:#8fa9a5}
+input:focus,select:focus,textarea:focus{
+  outline:3px solid rgba(94,224,189,.18);
+  border-color:var(--primary);
+  background:rgba(255,255,255,.12);
+}
+
+/* ---------- BOTÕES ---------- */
+.button{border:1px solid transparent;border-radius:12px;padding:12px 17px;cursor:pointer;font-weight:800;transition:transform .18s ease,background .18s ease,box-shadow .18s ease}
+.button:active{transform:scale(.97)}
+.primary{background:linear-gradient(135deg,#5ee0bd,#36b997);color:#06221d;box-shadow:0 10px 25px rgba(53,190,155,.2)}
+.primary:hover{background:linear-gradient(135deg,#8cf1d5,#45d1ae);box-shadow:0 12px 32px rgba(53,190,155,.32)}
+.secondary{background:rgba(255,255,255,.08);border-color:var(--line);color:var(--ink)}
+.secondary:hover{background:rgba(255,255,255,.16)}
+
+/* ---------- TOPO E MENU (transparentes) ---------- */
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding:26px max(24px,calc((100vw - 1180px)/2));
+  background:rgba(7,21,29,.30);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+.topbar h1{margin:0;font-size:32px}
+.top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+.tabs{
+  padding:0 max(24px,calc((100vw - 1180px)/2));
+  background:rgba(7,21,29,.20);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  position:sticky;
+  top:101px;
+  z-index:9;
+}
+
+/* ---------- CONTEÚDO ----------
+   padding-bottom em vez de margin-bottom: evita a faixa escura no fim */
+.container{
+  width:min(1180px,calc(100% - 40px));
+  margin:32px auto 0;
+  padding-bottom:70px;
+}
+.status{padding:12px 16px;margin-bottom:18px;background:rgba(94,224,189,.1);border:1px solid rgba(94,224,189,.18);border-radius:12px;color:var(--muted)}
+
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px}
+.summary-card{padding:22px}
+.summary-card span{display:block;color:var(--muted);margin-bottom:12px}
+.summary-card strong{font-size:28px;letter-spacing:-.04em}
+.income strong{color:var(--primary);text-shadow:0 0 22px rgba(94,224,189,.2)}
+.expense strong{color:var(--red)}
+
+.content-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr);gap:22px;margin-bottom:22px}
+.panel{padding:24px}
+
+/* ---------- TABELAS ---------- */
+.table-wrap{overflow:auto}
+table{width:100%;min-width:560px;border-collapse:collapse}
+th,td{text-align:left;padding:13px 9px;border-bottom:1px solid var(--line)}
+th{font-size:11px;color:var(--muted);text-transform:uppercase}
+td{color:#e3f0ed}
+.amount{font-weight:800;color:var(--primary)}
+
+/* ---------- CARTÕES INTERNOS ---------- */
+.cards{display:grid;gap:12px}
+.account-card,.product-card{padding:15px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.065);transition:.2s}
+.account-card:hover,.product-card:hover{transform:translateY(-2px);background:rgba(255,255,255,.11);border-color:rgba(94,224,189,.35)}
+.account-card{display:flex;justify-content:space-between;gap:16px}
+.account-card strong{font-size:19px}
+.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.product-card h3{margin:0 0 8px}
+.product-card p{margin:5px 0;color:var(--muted)}
+.low{color:var(--red)!important;font-weight:800}
+.inline-form{display:grid;grid-template-columns:1fr 1.5fr 1fr 1fr 1.2fr auto;gap:8px;margin-top:20px}
+.message{min-height:20px}
+
+/* ---------- RESPONSIVO ---------- */
+@media(max-width:800px){
+  .summary-grid,.content-grid{grid-template-columns:1fr}
+  .inline-form{grid-template-columns:1fr 1fr}
+  .topbar{align-items:flex-start;flex-wrap:wrap}
+  .tabs{top:142px}
+}
+@media(max-width:520px){
+  .container{width:calc(100% - 24px);margin-top:20px}
+  .topbar{padding:20px 12px}
+  .tabs{overflow:auto;padding:0 12px;top:156px}
+  .panel,.summary-card,.auth-card{padding:18px}
+  .product-grid{grid-template-columns:1fr}
+  .inline-form{grid-template-columns:1fr 1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{scroll-behavior:auto!important;transition:none!important}
+}
+
+/* Ecrãs estreitos (telemóvel): a versão pequena do mesmo fundo (menos dados = abre mais depressa). Mesmo gradiente e mesmo desenho. */
+@media (max-width: 900px) {
+  html {
+    background-image:
+      linear-gradient(135deg, rgba(7,21,29,.25), rgba(11,37,48,.20)),
+      url("../video/fundo-poster-m.webp");
+  }
+}
+

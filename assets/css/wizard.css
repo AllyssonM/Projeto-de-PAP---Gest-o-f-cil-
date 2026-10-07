@@ -1,0 +1,32 @@
+/* =========================================================================
+   QUESTIONÁRIO DE ARRANQUE  (assets/css/wizard.css)
+   -------------------------------------------------------------------------
+   Usa a mesma janela (.profile-dialog), os mesmos cartões (.profile-choice), as cores e a tipografia do sistema.
+   Só acrescenta o necessário: barra de progresso, opções escolhíveis (.wiz-opt) e os botões do rodapé.
+   ========================================================================= */
+.module-off { display: none !important; }              /* aba desligada no questionário */
+.wizard { display: grid; gap: 4px; }
+.wiz-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.wiz-progress { height: 6px; margin: 14px 0 18px; border-radius: 99px; background: var(--soft); overflow: hidden; }
+.wiz-progress #wiz-bar { display: block; height: 100%; width: 17%; border-radius: 99px; background: linear-gradient(90deg, var(--primary), #8cffe1); transition: width .24s ease; }
+.wiz-group { margin: 0 0 16px; padding: 0; border: 0; min-width: 0; }
+.wiz-group legend { padding: 0; margin-bottom: 8px; font-weight: 700; font-size: 14px; }
+.wiz-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.wiz-opt { position: relative; display: block; cursor: pointer; }
+.wiz-opt input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.wiz-opt > span { display: grid; gap: 3px; height: 100%; padding: 13px 15px; border-radius: 16px; border: 1px solid var(--line); background: var(--soft); transition: border-color .2s, background .2s, box-shadow .2s; }
+.wiz-opt strong { font-weight: 700; font-size: 14.5px; }
+.wiz-opt small { color: var(--muted); font-size: 12.5px; line-height: 1.4; font-weight: 400; }   /* os "label" do sistema são a negrito: a descrição tem de ser mais leve que o título */
+.wiz-opt:hover > span { border-color: rgba(94, 224, 189, .5); }
+.wiz-opt input:checked + span { border-color: var(--primary); background: rgba(94, 224, 189, .12); box-shadow: inset 0 0 0 1px rgba(94, 224, 189, .45); }
+.wiz-opt input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
+.wiz-opt input:disabled + span { opacity: .75; cursor: default; }
+.wiz-hint { margin: 4px 0 0; font-size: 13px; }
+.wiz-amount { display: grid; gap: 6px; max-width: 280px; margin-top: 4px; font-weight: 600; font-size: 14px; }
+.wiz-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.wiz-done { display: grid; gap: 8px; }
+.wiz-done p { margin: 0; }
+.wiz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wiz-chips span { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--soft); font-size: 13px; }
+@media (max-width: 520px) { .wiz-grid { grid-template-columns: 1fr; } .wiz-actions .button { flex: 1 1 100%; } }
+@media (prefers-reduced-motion: reduce) { .wiz-progress #wiz-bar, .wiz-opt > span { transition: none; } }

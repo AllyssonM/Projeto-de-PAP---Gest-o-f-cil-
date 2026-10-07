@@ -1,0 +1,34 @@
+/* Animação «Oi!»: cores do próprio site (--primary, --blue, --ink, --bg). Dura ~3,9 s e não bloqueia a página. */
+.oi{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:rgba(7,21,29,.84);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity .4s ease}
+html[data-tema="light"] .oi{background:rgba(232,243,240,.88)}
+.oi.oi-out{opacity:0;pointer-events:none}
+html.oi-on{overflow:hidden}
+.oi-svg{width:min(640px,92vw);height:auto;overflow:visible;grid-area:1/1}
+.oi-glow{filter:drop-shadow(0 0 10px color-mix(in srgb,var(--primary) 55%,transparent))}
+.oi-s{transform-box:fill-box;transform-origin:center;opacity:0;animation:oi-shape 3.6s cubic-bezier(.6,.05,.25,1) both}
+.oi-o{--tx:-70px;--ty:-10px;--r:-28deg;--sx:2.5;--sy:.1}
+.oi-i{--tx:-10px;--ty:-50px;--r:62deg;--sx:.7;--sy:2.6}
+.oi-id{--tx:-30px;--ty:-70px;--r:20deg;--sx:9;--sy:.8}
+.oi-e{--tx:60px;--ty:50px;--r:-70deg;--sx:.7;--sy:2.2}
+.oi-ed{--tx:90px;--ty:-20px;--r:-20deg;--sx:10;--sy:.8}
+@keyframes oi-shape{
+  0%,10%{opacity:0;transform:scale(.7)}
+  26%{opacity:1;transform:none}
+  36%{opacity:1;transform:none}
+  62%{opacity:1;transform:translate(var(--tx),var(--ty)) rotate(var(--r)) scale(var(--sx),var(--sy))}
+  86%{opacity:.9;transform:translate(0,-6px) rotate(0) scale(.25)}
+  100%{opacity:0;transform:translate(0,-6px) scale(.1)}
+}
+.oi-p{fill:var(--primary);opacity:0;transform:translate(var(--x),var(--y));animation:oi-dot 3.6s ease-in-out var(--d) both}
+@keyframes oi-dot{0%{opacity:0}18%{opacity:.8}55%{opacity:.5}86%{opacity:0;transform:translate(300px,150px)}100%{opacity:0}}
+.oi-brand{grid-area:1/1;display:flex;align-items:center;gap:14px;color:var(--ink);font-size:clamp(34px,7vw,54px);font-weight:800;letter-spacing:-.02em;opacity:0;animation:oi-brand 3.9s ease both}
+.oi-brand img{filter:drop-shadow(0 0 14px color-mix(in srgb,var(--primary) 60%,transparent))}
+@keyframes oi-brand{0%,60%{opacity:0;transform:scale(.85);filter:blur(6px)}78%{opacity:1;transform:none;filter:none}100%{opacity:1;transform:none}}
+.oi-skip{position:absolute;top:18px;right:18px;padding:9px 16px;border:1px solid var(--line);border-radius:999px;background:var(--surface-strong);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.oi-skip:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+/* movimento reduzido: só o nome, com um fade simples */
+.oi-reduce{animation:none}
+.oi-reduce .oi-svg{display:none}
+.oi-reduce .oi-brand{animation:oi-fade .6s ease both}
+@keyframes oi-fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.oi{transition:none}.oi-s,.oi-p{animation:none}}

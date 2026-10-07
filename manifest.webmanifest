@@ -1,0 +1,19 @@
+{
+  "name": "Lumina",
+  "short_name": "Lumina",
+  "description": "Gestão simples e clara para microempresários.",
+  "lang": "pt-PT",
+  "start_url": "dashboard.php",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061431",
+  "theme_color": "#061431",
+  "icons": [
+    { "src": "assets/img/lumina-pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/lumina-pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/lumina-pwa-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Registo rápido", "short_name": "Registo", "url": "dashboard.php", "description": "Abrir o painel para registar uma venda ou despesa" }
+  ]
+}

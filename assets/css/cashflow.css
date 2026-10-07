@@ -1,0 +1,62 @@
+/* =========================================================
+   FLUXO DE CAIXA: filtros, previsto × realizado, categorias,
+   estados, alertas e metas das contas
+   ========================================================= */
+.cf-toolbar{display:grid;grid-template-columns:150px 140px 140px minmax(0,1fr) auto;gap:12px;align-items:end;margin-bottom:22px;padding:18px 20px}
+.cf-toolbar .button{height:45px}
+
+.cf-forecast{margin-bottom:22px}
+.cf-forecast-total{font-size:20px;color:var(--primary);white-space:nowrap}
+.cf-compare{display:grid;gap:14px}
+.cf-note{font-size:12px;margin:14px 0 0}
+
+/* barras de categorias e comparação */
+.cf-categories{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.cf-cat-title{font-size:14px;margin:0 0 10px}
+.cat-row,.cmp-row{margin-bottom:11px}
+.cat-label{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:5px}
+.cat-label span{color:var(--ink)}
+.cat-label b{color:var(--muted);font-weight:700;white-space:nowrap}
+.cat-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.cat-bar i{display:block;height:100%;border-radius:inherit;transition:width .5s ease}
+.cat-bar.in i{background:linear-gradient(90deg,#238d78,var(--primary))}
+.cat-bar.out i{background:linear-gradient(90deg,#a84955,var(--red))}
+
+/* dicas */
+.cf-tips{margin:0;padding-left:20px;display:grid;gap:9px;color:var(--muted);font-size:14px;line-height:1.45}
+.cf-tips b{color:var(--ink)}
+
+/* estados */
+.badge{display:inline-block;padding:4px 9px;border-radius:99px;font-size:11px;font-weight:800;white-space:nowrap;border:1px solid transparent}
+.badge.ok{background:rgba(94,224,189,.13);color:var(--primary);border-color:rgba(94,224,189,.25)}
+.badge.wait{background:rgba(255,212,119,.13);color:#ffd477;border-color:rgba(255,212,119,.28)}
+.badge.late{background:rgba(255,157,144,.14);color:var(--red);border-color:rgba(255,157,144,.3)}
+.planned-row td{opacity:.78}
+.planned-row td:first-child{font-style:italic}
+.row-actions{white-space:nowrap;text-align:right}
+.row-actions .button.small{padding:5px 9px}
+
+/* alertas da visão geral */
+.cash-alerts{display:grid;gap:10px;margin-bottom:22px}
+.cash-alerts:empty{display:none}
+.cash-alert{text-align:left;padding:13px 16px;border-radius:14px;border:1px solid;font:inherit;font-weight:700;cursor:pointer;transition:transform .18s}
+.cash-alert:hover{transform:translateY(-2px)}
+.cash-alert.late{background:rgba(255,157,144,.12);border-color:rgba(255,157,144,.35);color:var(--red)}
+.cash-alert.wait{background:rgba(255,212,119,.1);border-color:rgba(255,212,119,.3);color:#ffd477}
+
+/* meta das contas */
+.goal{height:6px;width:180px;max-width:100%;margin:8px 0 4px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+.goal i{display:block;height:100%;background:linear-gradient(90deg,#238d78,var(--primary))}
+
+.inline-form{grid-template-columns:1fr 1.5fr 1fr 1fr 1.2fr 1fr auto}
+
+@media(max-width:800px){.inline-form{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){
+  .cf-toolbar{grid-template-columns:1fr 1fr 1fr}
+  .cf-search{grid-column:1/-1}
+}
+@media(max-width:600px){
+  .cf-toolbar{grid-template-columns:1fr 1fr}
+  .cf-categories{grid-template-columns:1fr}
+  .cf-forecast .panel-heading{flex-direction:column}
+}

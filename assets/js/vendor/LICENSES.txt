@@ -1,0 +1,4 @@
+qrcode.js (assets/js/vendor/qrcode.js)
+  Biblioteca "QR Code Generator for JavaScript", de Kazuhiko Arase.
+  Licença MIT (o aviso completo está no início do próprio ficheiro).
+  Usada para mostrar o QR code do 2.º passo (autenticação em dois passos).
