@@ -1,0 +1,101 @@
+/* =========================================================
+   PREPARAR RELATÓRIO (janela antes de imprimir / guardar PDF)
+   Reutiliza o modal do aviso de reunião (.reminder-modal / .reminder-card /
+   .reminder-close): mesmo vidro, desfoque, entrada, botão × e tema claro/escuro.
+   Aqui só está o que é específico: a animação da folha e os botões.
+   Animações só com transform e opacity (leves para o navegador).
+   ========================================================= */
+.print-modal{z-index:42}
+.print-card{width:min(440px,100%);padding:30px 28px 26px;text-align:center}
+
+/* ---------- palco da animação ---------- */
+.print-stage{position:relative;height:198px;display:grid;place-items:center;perspective:780px;margin:2px 0 6px}
+.print-glow{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(94,224,189,.30),transparent 68%);opacity:0;transform:scale(.6)}
+
+.print-sheet{
+  position:relative;width:134px;height:174px;padding:14px 13px;
+  display:grid;align-content:start;gap:8px;overflow:hidden;
+  border-radius:14px;background:var(--card-hover);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.2);
+  opacity:0;transform-origin:50% 100%;
+}
+.ps-head{display:flex;align-items:center;gap:7px}
+.ps-dot{width:9px;height:9px;border-radius:50%;background:var(--primary);flex:none;box-shadow:0 0 10px rgba(94,224,189,.6);opacity:0;transform:scale(.4)}
+.ps-line{display:block;height:6px;width:var(--w,80%);border-radius:4px;background:var(--soft-strong);opacity:0;transform:scaleX(0);transform-origin:0 50%}
+.ps-head .ps-line{flex:none}
+.ps-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.ps-kpis span{height:22px;border-radius:7px;background:rgba(94,224,189,.16);border:1px solid rgba(94,224,189,.34);opacity:0;transform:scale(.55)}
+.ps-chart{height:44px;display:flex;align-items:flex-end;gap:5px;padding:0 1px}
+.ps-chart i{flex:1;height:var(--h);border-radius:3px 3px 1px 1px;background:linear-gradient(180deg,#5ee0bd,#177d6c);transform:scaleY(0);transform-origin:50% 100%}
+
+/* feixe de luz que "passa" o relatório a limpo */
+.ps-beam{position:absolute;left:0;right:0;top:0;height:38px;opacity:0;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(94,224,189,.34) 70%,rgba(94,224,189,.55));border-bottom:1px solid rgba(94,224,189,.85)}
+
+/* selo de "pronto" */
+.print-badge{
+  position:absolute;right:calc(50% - 88px);bottom:16px;width:46px;height:46px;border-radius:50%;
+  display:grid;place-items:center;color:#06221d;
+  background:linear-gradient(135deg,#5ee0bd,#36b997);
+  box-shadow:0 10px 26px rgba(53,190,155,.45);
+  transform:scale(0);
+}
+.pb-ripple{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(94,224,189,.65);opacity:0;pointer-events:none}
+
+/* ---------- a animação (só corre com .is-playing) ---------- */
+.print-card.is-playing .print-glow{animation:pm-glow 1.1s .1s ease-out forwards,pm-breathe 3.4s 1.4s ease-in-out infinite}
+.print-card.is-playing .print-sheet{animation:pm-rise .8s .12s cubic-bezier(.2,.9,.3,1.08) forwards,pm-float 3.6s 2.3s ease-in-out infinite}
+.print-card.is-playing .ps-dot{animation:pm-pop .4s .5s cubic-bezier(.3,1.5,.5,1) forwards}
+.print-card.is-playing .ps-line{animation:pm-draw .55s var(--d,.6s) cubic-bezier(.2,.9,.3,1) forwards,pm-solid .45s 1.85s ease forwards}
+.print-card.is-playing .ps-kpis span{animation:pm-pop .45s var(--d,.8s) cubic-bezier(.3,1.5,.5,1) forwards}
+.print-card.is-playing .ps-chart i{animation:pm-grow .65s var(--d,1s) cubic-bezier(.2,.9,.3,1) forwards}
+.print-card.is-playing .ps-beam{animation:pm-scan 1s 1.4s cubic-bezier(.45,0,.3,1) forwards}
+.print-card.is-playing .print-badge{animation:pm-badge .6s 2.1s cubic-bezier(.3,1.6,.5,1) forwards}
+.print-card.is-playing .pb-ripple{animation:pm-ripple 1.3s 2.2s ease-out 2 forwards}
+.print-card.is-playing .pb-ripple.r2{animation-delay:2.5s}
+
+@keyframes pm-glow{to{opacity:1;transform:scale(1)}}
+@keyframes pm-breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(1.08)}}
+@keyframes pm-rise{from{opacity:0;transform:translateY(32px) rotateX(26deg) scale(.9)}to{opacity:1;transform:none}}
+@keyframes pm-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes pm-draw{from{opacity:0;transform:scaleX(0)}to{opacity:.6;transform:scaleX(1)}}
+@keyframes pm-solid{from{opacity:.6}to{opacity:1}}
+@keyframes pm-pop{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:none}}
+@keyframes pm-grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pm-scan{0%{opacity:0;transform:translateY(-38px)}14%{opacity:1}86%{opacity:1}100%{opacity:0;transform:translateY(174px)}}
+@keyframes pm-badge{from{transform:scale(0) rotate(-50deg)}to{transform:none}}
+@keyframes pm-ripple{from{opacity:.75;transform:scale(.75)}to{opacity:0;transform:scale(2.1)}}
+
+/* ---------- texto ---------- */
+.print-copy{margin-top:4px}
+.print-copy .eyebrow{margin:0 0 4px}
+.print-copy h2{margin:0;font-size:22px;letter-spacing:-.02em}
+.print-status{display:grid;margin:8px auto 0;max-width:340px;min-height:44px;color:var(--muted);font-size:14px;line-height:1.5}
+.print-status span{grid-area:1/1;transition:opacity .3s ease,transform .4s cubic-bezier(.2,.9,.3,1)}
+.pst-done{opacity:0;transform:translateY(7px)}
+.print-card.is-ready .pst-working{opacity:0;transform:translateY(-7px)}
+.print-card.is-ready .pst-done{opacity:1;transform:none;transition-delay:.12s}
+
+/* ---------- botões (aparecem no fim da animação) ---------- */
+.print-actions{display:flex;gap:10px;justify-content:center;margin-top:16px;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .4s ease,transform .5s cubic-bezier(.2,.9,.3,1.1)}
+.print-card.is-ready .print-actions{opacity:1;transform:none;pointer-events:auto;transition-delay:.18s}
+.print-actions .button{flex:1;padding:12px 16px}
+.print-actions .button:disabled{cursor:default}
+
+@media(max-width:480px){
+  .print-card{padding:26px 18px 20px}
+  .print-stage{height:182px}
+  .print-actions{flex-direction:column-reverse}
+}
+
+/* sem animações: mostra logo o estado final */
+@media(prefers-reduced-motion:reduce){
+  .print-card .print-glow,.print-card .print-sheet,.print-card .ps-dot,.print-card .ps-line,.print-card .ps-kpis span{animation:none!important;opacity:1;transform:none}
+  .print-card .ps-chart i{animation:none!important;transform:none}
+  .print-card .print-badge{animation:none!important;transform:none}
+  .print-card .pb-ripple,.print-card .ps-beam{display:none}
+  .print-status span,.print-actions{transition:none}
+}
+
+/* a janela nunca aparece na impressão */
+@media print{.print-modal{display:none!important}}

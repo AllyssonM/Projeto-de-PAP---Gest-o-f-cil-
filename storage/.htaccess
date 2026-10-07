@@ -1,0 +1,3 @@
+# Fotos, logos e recibos enviados pelos utilizadores: nunca acessíveis por URL direto.
+# São servidas por api/files.php e api/attachments.php, que confirmam o login e o negócio.
+Require all denied

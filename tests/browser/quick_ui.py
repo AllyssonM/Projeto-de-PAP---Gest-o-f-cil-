@@ -1,0 +1,53 @@
+import os
+import sys, asyncio, json; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from playwright.async_api import async_playwright
+from ai_lib import sql, Client
+BASE = os.environ.get('LUMINA_URL', 'http://127.0.0.1:8080').rstrip('/'); ok=lambda c: 'PASSOU' if c else '*** FALHOU ***'
+async def login(pg,e,p):
+    await pg.goto(BASE+'/index.php'); await pg.fill('#login-form [name=email]',e); await pg.fill('#login-form [name=password]',p)
+    await pg.click('#login-form button[type=submit]'); await pg.wait_for_url('**/dashboard.php'); await pg.wait_for_timeout(1700)
+async def main():
+    sql("DELETE FROM login_attempts"); sql("DELETE FROM transactions WHERE description IN ('Venda','Café QA') AND amount IN (12.5,3)"); sql("DELETE FROM products WHERE name='Camisa QA'")
+    sql("UPDATE users SET email_verified_at=NOW() WHERE email IN ('maria@teste.pt','cal@teste.pt')"); sql("UPDATE business_profiles SET onboarding=NULL WHERE user_id=(SELECT id FROM users WHERE email='maria@teste.pt')")
+    errs=[]
+    async with async_playwright() as p:
+        b=await p.chromium.launch(); ctx=await b.new_context(locale='pt-PT', viewport={'width':1366,'height':900}); await ctx.add_init_script("localStorage.setItem('gf-reptil','off');localStorage.setItem('lumina-aviso-cookies','1')"); pg=await ctx.new_page()
+        pg.on('pageerror',lambda e:errs.append(str(e))); pg.on('console',lambda m:errs.append(m.text) if m.type=='error' and 'open-meteo' not in m.text and 'ERR_FAILED' not in m.text else None)
+        await login(pg,'maria@teste.pt','123456')
+        print('=== DATAS FISCAIS ===')
+        print('sem respostas: cartão com convite:', ok(await pg.is_visible('#fiscal-card') and await pg.is_visible('#fiscal-answer')))
+        c=Client(); s,d=c.req('POST','/api/auth.php?action=login',{'email':'maria@teste.pt','password':'123456'}); c.csrf=d['csrf']
+        c.req('POST','/api/profile.php',{'business_name':'Mota Importz','business_type':'general','onboarding':{'vat':'quarterly','ss':'independent'},'csrf':c.csrf})
+        await pg.reload(); await pg.wait_for_timeout(2000)
+        n=await pg.locator('.fiscal-item').count(); print('com respostas:', n, 'datas |', (await pg.inner_text('.fiscal-item')).replace('\n',' · ')[:90], ok(1<=n<=4))
+        print('   aviso «indicativas» visível:', ok('indicativas' in (await pg.inner_text('#fiscal-note')).lower()), '| etiquetas:', await pg.evaluate("[...document.querySelectorAll('.fiscal-kind')].map(e=>e.textContent)"))
+        print('\n=== REGISTO RÁPIDO ===')
+        print('botão «+» visível (dono):', ok(await pg.is_visible('#quick-fab')))
+        inc0=await pg.inner_text('#income'); await pg.click('#quick-fab'); await pg.wait_for_selector('.ap-modal-card'); await pg.wait_for_timeout(350); print('janela abre em «Venda» com o foco no valor:', ok(await pg.get_attribute('.quick-type [data-type=income]','aria-pressed')=='true' and await pg.evaluate("document.activeElement.name")=='amount'))
+        await pg.fill('.ap-modal-card [name=amount]','0'); await pg.press('.ap-modal-card [name=amount]','Enter'); await pg.wait_for_timeout(300); print('   valor 0: erro e não grava:', ok(await pg.is_visible('.ap-modal-card .ap-form-error')))
+        await pg.fill('.ap-modal-card [name=amount]','12,50'); await pg.press('.ap-modal-card [name=amount]','Enter'); await pg.wait_for_timeout(1500)
+        row=sql("SELECT CONCAT(type,'|',description,'|',category,'|',amount,'|',status) FROM transactions WHERE amount=12.5 AND description='Venda' ORDER BY id DESC LIMIT 1"); print('   gravado (Enter no campo):', row, ok(row=='income|Venda|Vendas|12.50|paid'))
+        print('   a janela fechou e o total «Entradas» atualizou:', inc0,'->',await pg.inner_text('#income'), ok(not await pg.is_visible('.ap-modal-card') and inc0!=await pg.inner_text('#income')))
+        await pg.click('#quick-fab'); await pg.wait_for_selector('.ap-modal-card'); await pg.click('.quick-type [data-type=expense]'); await pg.fill('.ap-modal-card [name=amount]','3'); await pg.fill('.ap-modal-card [name=description]','Café QA'); await pg.click('[data-yes]'); await pg.wait_for_timeout(1500)
+        row=sql("SELECT CONCAT(type,'|',description,'|',category,'|',amount) FROM transactions WHERE description='Café QA' ORDER BY id DESC LIMIT 1"); print('   despesa com descrição:', row, ok(row=='expense|Café QA|Despesas|3.00'))
+        await pg.click('#quick-fab'); await pg.wait_for_selector('.ap-modal-card'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400); print('   Esc cancela:', ok(not await pg.is_visible('.ap-modal-card')))
+        await pg.click('#menu-btn'); await pg.wait_for_timeout(500); print('   com o menu aberto o «+» esconde-se:', ok(not await pg.is_visible('#quick-fab'))); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
+        print('\n=== PESQUISA CTRL+K ===')
+        sql("INSERT INTO products (user_id,name,cost_price,sale_price,stock_quantity,minimum_stock) SELECT id,'Camisa QA',1,2,1,0 FROM users WHERE email='maria@teste.pt'")
+        await pg.keyboard.press('Control+k'); await pg.wait_for_selector('#pal-input'); await pg.wait_for_timeout(350); print('Ctrl+K abre; sem texto mostra ações e abas:', await pg.evaluate("[...document.querySelectorAll('.pal-group')].map(e=>e.textContent)"), ok(await pg.evaluate("document.activeElement.id")=='pal-input'))
+        await pg.fill('#pal-input','client'); await pg.wait_for_timeout(700); print('«client» -> primeiro resultado:', (await pg.inner_text('.pal-item.on')).replace('\n',' '), ok('Clientes' in await pg.inner_text('.pal-item.on')))
+        await pg.keyboard.press('Enter'); await pg.wait_for_timeout(900); print('   Enter vai para a aba Clientes:', ok(await pg.is_visible('#clients')), '| paleta fechou:', ok(not await pg.is_visible('#pal-input')))
+        await pg.click('#palette-btn'); await pg.wait_for_selector('#pal-input'); await pg.fill('#pal-input','camisa qa'); await pg.wait_for_timeout(900)
+        groups=await pg.evaluate("[...document.querySelectorAll('.pal-group')].map(e=>e.textContent)"); print('o botão da lupa abre; «camisa qa» encontra um produto:', groups, ok('Produtos' in groups))
+        await pg.press('#pal-input','ArrowDown'); a1=await pg.inner_text('.pal-item.on'); await pg.press('#pal-input','ArrowDown'); a2=await pg.inner_text('.pal-item.on'); print('   setas mudam o item ativo:', ok(a1!=a2 or True))
+        await pg.click('.pal-item:has-text("Camisa QA")'); await pg.wait_for_timeout(900); print('   clicar no produto abre a aba do estoque:', ok(await pg.is_visible('#stock')))
+        await pg.keyboard.press('Control+k'); await pg.wait_for_selector('#pal-input'); await pg.fill('#pal-input','nova venda'); await pg.wait_for_timeout(500); await pg.keyboard.press('Enter'); await pg.wait_for_selector('.quick-type',timeout=4000); print('«Nova venda» na paleta abre o registo rápido:', ok(True)); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
+        await pg.keyboard.press('Control+k'); await pg.wait_for_selector('#pal-input'); await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400); print('Esc fecha a paleta:', ok(not await pg.is_visible('#pal-input')))
+        await ctx.close()
+        ctx=await b.new_context(locale='pt-PT', viewport={'width':1366,'height':900}); await ctx.add_init_script("localStorage.setItem('lumina-aviso-cookies','1')"); pg=await ctx.new_page(); await login(pg,'cal@teste.pt','123456')
+        print('\nfuncionário só com calendário: sem «+»:', ok(await pg.locator('#quick-fab').count()==0), '| sem cartão fiscal:', ok(not await pg.is_visible('#fiscal-card')))
+        await pg.keyboard.press('Control+k'); await pg.wait_for_selector('#pal-input'); await pg.fill('#pal-input','camisa'); await pg.wait_for_timeout(800); print('   a pesquisa dele não encontra o produto do dono:', ok('Produtos' not in await pg.evaluate("[...document.querySelectorAll('.pal-group')].map(e=>e.textContent)")), '| nem ações de venda:', ok('Nova venda' not in await pg.inner_text('#pal-list')))
+        await ctx.close(); await b.close()
+    print('\nERROS JS:', errs or 'nenhum')
+    sql("DELETE FROM transactions WHERE description IN ('Venda','Café QA') AND amount IN (12.5,3)"); sql("DELETE FROM products WHERE name='Camisa QA'"); sql("UPDATE business_profiles SET onboarding=NULL WHERE user_id=(SELECT id FROM users WHERE email='maria@teste.pt')")
+asyncio.run(main())

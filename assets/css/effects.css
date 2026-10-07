@@ -1,0 +1,105 @@
+/* =========================================================
+   EFEITOS: modo claro, botão de tema, botões com brilho,
+   coração animado e corações ao guardar.
+   Carregar DEPOIS dos outros CSS.
+   ========================================================= */
+
+/* ---------- botão de tema / réptil ---------- */
+.theme-toggle{display:inline-grid;place-items:center;width:40px;height:40px;flex:none;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.08);color:var(--ink);font-size:18px;cursor:pointer;transition:background .2s,transform .3s}
+.theme-toggle:hover{background:rgba(255,255,255,.16);transform:rotate(18deg)}
+.theme-toggle[aria-pressed="false"].reptile-toggle{opacity:.45;filter:grayscale(1)}
+
+/* transição suave ao trocar de tema */
+html.theme-anim,html.theme-anim *{transition:background-color .4s ease,color .4s ease,border-color .4s ease!important}
+
+/* ---------- botões com brilho ao passar o rato ---------- */
+.button{position:relative;overflow:hidden;isolation:isolate}
+.button::after{content:"";position:absolute;inset:0;z-index:-1;opacity:0;pointer-events:none;transition:opacity .25s;background:radial-gradient(140px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.45),transparent 60%)}
+.button:hover::after{opacity:1}
+.button.primary:hover{box-shadow:0 0 0 1px rgba(94,224,189,.35),0 12px 34px rgba(53,190,155,.38)}
+.button.secondary:hover{box-shadow:0 0 22px rgba(94,224,189,.18)}
+
+/* ---------- coração do rodapé ---------- */
+.heart{display:inline-block;font-style:normal;color:#ff5d7a;animation:heartbeat 1.3s ease-in-out infinite}
+.heart::before{content:"❤"}
+@keyframes heartbeat{0%,100%{transform:scale(1)}15%{transform:scale(1.28)}30%{transform:scale(1)}45%{transform:scale(1.18)}60%{transform:scale(1)}}
+
+/* ---------- corações ao guardar ---------- */
+.heart-burst{position:fixed;z-index:60;pointer-events:none;font-size:var(--size,20px);line-height:1;transform:translate(-50%,-50%);animation:heart-fly 1.15s cubic-bezier(.2,.7,.3,1) forwards;text-shadow:0 4px 12px rgba(0,0,0,.25)}
+@keyframes heart-fly{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+  15%{opacity:1}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot)) scale(1.1)}
+}
+
+/* =========================================================
+   MODO CLARO
+   ========================================================= */
+html[data-tema="light"]{
+  --ink:#12302b;
+  --muted:#4d6964;
+  --line:rgba(18,48,43,.14);
+  --surface:rgba(255,255,255,.6);
+  --surface-strong:rgba(255,255,255,.92);
+  --bg:#e8f3f0;
+  --primary:#119a7b;
+  --dark:#0c7d63;
+  --red:#cf4a4a;
+  --blue:#2f6fd6;
+  --shadow:0 18px 50px rgba(20,60,55,.14);
+  --glass-border:rgba(255,255,255,.75);
+  background-image:linear-gradient(135deg,rgba(240,250,247,.78),rgba(226,242,238,.82)),url("../video/fundo-poster.webp");
+}
+html[data-tema="light"] body:before,html[data-tema="light"] body:after{opacity:.18}
+
+html[data-tema="light"] .auth-card,
+html[data-tema="light"] .panel,
+html[data-tema="light"] .summary-card,
+html[data-tema="light"] .profile-dialog,
+html[data-tema="light"] .glass-card,
+html[data-tema="light"] .reminder-card,
+html[data-tema="light"] .auth-box,
+html[data-tema="light"] .profile-pills span{background:rgba(255,255,255,.66);box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.9)}
+
+html[data-tema="light"] .topbar,
+html[data-tema="light"] .site-header{background:rgba(255,255,255,.62)}
+html[data-tema="light"] .tabs{background:rgba(255,255,255,.45)}
+html[data-tema="light"] td{color:var(--ink)}
+html[data-tema="light"] input,
+html[data-tema="light"] select,
+html[data-tema="light"] textarea{background:rgba(255,255,255,.75)}
+html[data-tema="light"] input:focus,
+html[data-tema="light"] select:focus,
+html[data-tema="light"] textarea:focus{background:#fff;outline-color:rgba(17,154,123,.18)}
+html[data-tema="light"] option{background:#fff;color:#12302b}
+html[data-tema="light"] input::placeholder,
+html[data-tema="light"] textarea::placeholder{color:#7f9893}
+html[data-tema="light"] .secondary{background:rgba(255,255,255,.7)}
+html[data-tema="light"] .secondary:hover{background:#fff}
+html[data-tema="light"] .theme-toggle{background:rgba(255,255,255,.7)}
+html[data-tema="light"] .status{background:rgba(17,154,123,.09)}
+html[data-tema="light"] .main-nav{background:transparent}
+@media(max-width:700px){html[data-tema="light"] .main-nav{background:#fff}}
+html[data-tema="light"] .calc-screen{background:rgba(255,255,255,.7)}
+html[data-tema="light"] .key{background:rgba(255,255,255,.7)}
+html[data-tema="light"] .key.op{background:rgba(17,154,123,.1)}
+html[data-tema="light"] .key.eq{background:linear-gradient(135deg,#5ee0bd,#36b997)}
+html[data-tema="light"] .text-gradient{text-shadow:none}
+html[data-tema="light"] .income strong{text-shadow:none}
+html[data-tema="light"] .floating-chip{background:rgba(255,255,255,.78);color:var(--ink)}
+html[data-tema="light"] .mini-window{background:rgba(255,255,255,.6)}
+html[data-tema="light"] .cat-bar,
+html[data-tema="light"] .goal{background:rgba(18,48,43,.09)}
+
+/* cores de aviso legíveis em fundo claro */
+html[data-tema="light"] .badge.wait,
+html[data-tema="light"] .cash-alert.wait{color:#9a6a00;background:rgba(255,190,50,.16);border-color:rgba(200,140,0,.3)}
+html[data-tema="light"] .reminder-card.soon .rc-box b,
+html[data-tema="light"] .reminder-card.soon .reminder-bell{color:#b07800}
+html[data-tema="light"] .reminder-modal{background:rgba(200,225,220,.5)}
+
+@media(prefers-reduced-motion:reduce){
+  .heart{animation:none}
+  .heart-burst{display:none}
+  .theme-toggle:hover{transform:none}
+}

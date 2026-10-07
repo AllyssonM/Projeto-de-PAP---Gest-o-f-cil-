@@ -1,0 +1,2 @@
+# Os ficheiros SQL (estrutura da base de dados) nunca devem ser descarregados pelo navegador.
+Require all denied

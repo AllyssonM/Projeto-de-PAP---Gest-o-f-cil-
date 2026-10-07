@@ -1,0 +1,12 @@
+# Segredos e ficheiros locais (nunca vão para o repositório)
+config/app_key.php
+config/*.local.php
+storage/mail/*
+storage/avatars/*
+storage/logos/*
+storage/receipts/*
+storage/logs/*
+!storage/*/.gitkeep
+__pycache__/
+*.pyc
+node_modules/

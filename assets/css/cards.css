@@ -1,0 +1,192 @@
+/* =========================================================
+   CARTÕES ASSOCIADOS (Visão geral) + janela "Adicionar cartão"
+   Reutiliza o modal de vidro do aviso de reunião (.reminder-modal / .reminder-card / .reminder-close)
+   e as variáveis do tema (claro/escuro). Só CSS: sem bibliotecas.
+   ========================================================= */
+
+/* ---------- lista de cartões ---------- */
+.cards-panel{margin-top:22px}                      /* mesmo espaço (22px) que as outras linhas da Visão geral */
+.cards-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.cards-empty{grid-column:1/-1;padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:16px;background:var(--card)}
+
+.wallet-card{
+  position:relative;overflow:hidden;min-height:162px;padding:16px 18px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:14px;
+  border-radius:18px;color:var(--ink);
+  background:linear-gradient(135deg,rgba(94,224,189,.18),rgba(135,185,255,.13) 55%,rgba(130,100,255,.15)),var(--card);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.2);
+  backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%);
+  transition:transform .35s cubic-bezier(.2,.9,.3,1.15),box-shadow .35s,border-color .3s;
+  animation:wc-in .6s cubic-bezier(.2,.9,.3,1.1) both;animation-delay:calc(var(--i,0) * 70ms);
+}
+.wallet-card:before{content:"";position:absolute;top:0;left:14%;right:14%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)}
+.wallet-card:after{content:"";position:absolute;inset:-40% -60%;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.2) 50%,transparent 58%);transform:translateX(-70%);transition:transform .9s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+.wallet-card:hover{transform:translateY(-4px);border-color:rgba(94,224,189,.55);box-shadow:var(--shadow),0 16px 36px rgba(94,224,189,.2)}
+.wallet-card:hover:after{transform:translateX(70%)}
+.wallet-card.is-new{animation:wc-in .65s cubic-bezier(.2,.9,.3,1.1) both,wc-flash 1.8s .5s ease-out}
+@keyframes wc-in{from{opacity:0;transform:translateY(16px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes wc-flash{0%,100%{box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.2)}35%{box-shadow:var(--shadow),0 0 0 3px rgba(94,224,189,.55),0 0 34px rgba(94,224,189,.4)}}
+
+.wc-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.wc-brand{font-weight:900;letter-spacing:.06em;font-size:15px}
+.wallet-card[data-brand="visa"] .wc-brand{font-style:italic;font-size:17px}
+.wc-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.wc-badge{padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid var(--line);background:var(--soft);color:var(--ink);white-space:nowrap}
+.wc-badge.primary{color:var(--primary);border-color:rgba(94,224,189,.45);background:rgba(94,224,189,.12)}
+.wc-badge.ok{color:var(--primary);border-color:rgba(94,224,189,.35)}
+.wc-badge.expired{color:var(--red);border-color:rgba(255,157,144,.5);background:rgba(255,157,144,.1)}
+.wc-number{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:15px;letter-spacing:.06em;font-weight:700;white-space:nowrap;overflow:hidden}
+.wc-bottom{display:flex;justify-content:space-between;gap:12px;align-items:flex-end}
+.wc-bottom small{display:block;font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.wc-bottom b{font-size:13px;letter-spacing:.04em;word-break:break-word}
+
+/* ---------- janela ---------- */
+.card-modal{z-index:42}
+.card-dialog{width:min(900px,100%);padding:26px 30px 28px}
+
+.cm-steps{list-style:none;display:flex;gap:6px;justify-content:center;margin:0 0 22px;padding:0}
+.cm-steps li{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;border:1px solid transparent;color:var(--muted);font-size:12px;font-weight:700;transition:color .35s,background .35s,border-color .35s}
+.cm-steps li i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;background:var(--soft-strong);transition:background .35s,color .35s}
+.cm-steps li.on{color:var(--ink);background:var(--soft);border-color:var(--line)}
+.cm-steps li.on i,.cm-steps li.done i{background:linear-gradient(135deg,#5ee0bd,#36b997);color:#06221d}
+.cm-steps li.done{color:var(--ink)}
+.cm-steps li.done i{font-size:0}
+.cm-steps li.done i:after{content:"✓";font-size:11px;font-weight:900}
+
+.cm-body{display:grid;grid-template-columns:1.02fr .98fr;gap:30px;align-items:center}
+.cm-note{margin:14px auto 0;max-width:340px;text-align:center;font-size:11.5px;line-height:1.5;color:var(--muted)}
+
+/* cartão digital */
+.cc-scene{perspective:1100px;display:grid;place-items:center;padding:8px 0}
+.cc-tilt{width:min(344px,100%);aspect-ratio:1.586;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .2s ease-out}
+.cc{position:relative;width:100%;height:100%;transform-style:preserve-3d;transform:rotateY(var(--flip,0deg));transition:transform .85s cubic-bezier(.2,.8,.2,1)}
+.cc.is-flipped{--flip:180deg}
+.cc-face{
+  position:absolute;inset:0;overflow:hidden;padding:20px 22px;border-radius:20px;color:#eef7f5;
+  display:flex;flex-direction:column;justify-content:space-between;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:linear-gradient(135deg,rgba(94,224,189,.34),rgba(100,150,255,.26) 55%,rgba(130,100,255,.32)),rgba(10,28,38,.62);
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow:0 26px 54px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.32),inset 0 -24px 40px rgba(0,0,0,.14);
+}
+.cc-back{transform:rotateY(180deg);padding:0}
+.cc-shine{position:absolute;inset:-40% -60%;background:linear-gradient(115deg,transparent 41%,rgba(255,255,255,.24) 50%,transparent 59%);transform:translateX(-70%);animation:cc-sweep 6s ease-in-out infinite;pointer-events:none}
+@keyframes cc-sweep{0%,55%{transform:translateX(-70%)}85%,100%{transform:translateX(70%)}}
+.cc-glare{position:absolute;inset:0;background:radial-gradient(circle at var(--mx,30%) var(--my,20%),rgba(255,255,255,.3),transparent 55%);opacity:var(--ga,0);transition:opacity .25s;pointer-events:none}
+
+.cc-top{display:flex;align-items:center;gap:12px;position:relative}
+.cc-chip{width:42px;height:31px;border-radius:7px;background:linear-gradient(135deg,rgba(255,255,255,.6),rgba(255,255,255,.2)),repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 2px,transparent 2px 9px);border:1px solid rgba(255,255,255,.4)}
+.cc-nfc{opacity:.8}
+.cc-brand{margin-left:auto;font-weight:900;font-size:19px;letter-spacing:.04em;transition:opacity .3s,transform .4s cubic-bezier(.2,.9,.3,1.3)}
+.cc-brand:empty{opacity:0;transform:scale(.7)}
+.cc[data-brand="visa"] .cc-brand{font-style:italic;font-size:22px}
+.cc-number{display:flex;gap:.8em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:clamp(16px,4.6vw,22px);letter-spacing:.1em;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,.25);position:relative}
+.cc-number span{display:flex}
+.cc-number i{font-style:normal;display:inline-block;min-width:.66em;text-align:center}
+.cc-number i.ph{opacity:.45}
+.cc-number i.pop{animation:cc-pop .32s cubic-bezier(.3,1.5,.5,1)}
+@keyframes cc-pop{from{opacity:0;transform:translateY(9px) scale(.65)}to{opacity:1;transform:none}}
+.cc-bottom{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;position:relative}
+.cc-bottom small{display:block;font-size:9.5px;letter-spacing:.12em;opacity:.7;font-weight:700}
+.cc-bottom b{display:block;font-size:13px;letter-spacing:.06em;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-bottom > div:last-child{text-align:right}
+.cc-name-pop,.cc-exp-pop{animation:cc-pop .3s ease}
+.cc-ok{position:absolute;right:18px;top:62px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#06221d;background:linear-gradient(135deg,#5ee0bd,#36b997);box-shadow:0 8px 22px rgba(53,190,155,.5);transform:scale(0);opacity:0}
+
+/* verso */
+.cc-stripe{position:absolute;left:0;right:0;top:28px;height:44px;background:rgba(0,0,0,.62)}
+.cc-sign{position:absolute;left:22px;right:22px;top:92px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:14px;background:repeating-linear-gradient(135deg,rgba(255,255,255,.34) 0 6px,rgba(255,255,255,.2) 6px 12px)}
+.cc-cvv{min-width:54px;padding:3px 10px;border-radius:5px;background:rgba(255,255,255,.88);color:#0a1c26;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:800;letter-spacing:.24em;text-align:center;min-height:22px}
+.cc-cvv-label{position:absolute;right:24px;top:136px;font-size:10px;letter-spacing:.14em;opacity:.8;font-weight:700}
+.cc-fine{position:absolute;left:22px;right:22px;bottom:16px;font-size:10px;line-height:1.4;opacity:.65}
+
+/* ---------- formulário ---------- */
+.cm-right{position:relative;min-height:420px}
+.cm-right h2{margin:0 0 4px;font-size:22px;letter-spacing:-.02em}
+.cm-right .eyebrow{margin:0 0 6px}
+.cm-sub{margin:0 0 16px;font-size:13px}
+.cm-right form{transition:opacity .35s ease,transform .45s cubic-bezier(.2,.9,.3,1)}
+.card-dialog:not([data-state="form"]) .cm-right form{opacity:0;transform:scale(.97) translateY(6px);pointer-events:none}
+
+.cm-field{display:grid;gap:7px;margin-bottom:12px;color:var(--muted);font-size:13px;font-weight:700}
+.cm-input{position:relative;display:block}
+.cm-input input{min-height:46px;transition:border-color .2s,box-shadow .25s,background .2s,transform .2s}
+.cm-input input:focus{transform:translateY(-1px);box-shadow:0 0 0 3px rgba(94,224,189,.16),0 10px 26px rgba(94,224,189,.14)}
+.cm-input input[aria-invalid="true"]{border-color:rgba(255,157,144,.75);box-shadow:0 0 0 3px rgba(255,157,144,.14)}
+#cm-cvv{letter-spacing:.3em}
+.cm-brandtag{position:absolute;right:12px;top:50%;transform:translateY(-50%) scale(.8);font-size:12px;font-weight:900;letter-spacing:.06em;color:var(--primary);opacity:0;pointer-events:none;transition:opacity .25s,transform .35s cubic-bezier(.2,.9,.3,1.3)}
+.cm-brandtag.on{opacity:1;transform:translateY(-50%)}
+.cm-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cm-err{font-style:normal;font-size:12px;font-weight:600;color:var(--red)}
+.cm-err:empty{display:none}
+.cm-field.shake{animation:cm-shake .42s}
+@keyframes cm-shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+.cm-toggle{display:flex;align-items:center;gap:11px;margin:4px 0 2px;color:var(--ink);font-size:14px;cursor:pointer;user-select:none}
+.cm-toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.cm-switch{flex:none;position:relative;width:44px;height:25px;border-radius:999px;background:var(--soft-strong);border:1px solid var(--line);transition:background .3s,border-color .3s}
+.cm-switch:after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:var(--ink);transition:transform .35s cubic-bezier(.3,1.4,.5,1),background .3s}
+.cm-toggle input:checked + .cm-switch{background:linear-gradient(135deg,#5ee0bd,#36b997);border-color:transparent}
+.cm-toggle input:checked + .cm-switch:after{transform:translateX(19px);background:#06221d}
+.cm-toggle input:focus-visible + .cm-switch{outline:3px solid rgba(94,224,189,.4);outline-offset:2px}
+
+.cm-alert{margin:12px 0 0;padding:10px 12px;border-radius:12px;font-size:13px;background:rgba(255,157,144,.12);border:1px solid rgba(255,157,144,.38)}
+.cm-alert[hidden]{display:none}
+.cm-submit{width:100%;margin-top:16px;padding:14px 18px;min-height:48px}
+
+/* ---------- processamento e sucesso ---------- */
+.cm-overlay{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.cm-pane{grid-area:1/1;text-align:center;opacity:0;transform:translateY(12px) scale(.95);transition:opacity .4s ease,transform .5s cubic-bezier(.2,.9,.3,1.1)}
+.cm-pane h3{margin:14px 0 4px;font-size:19px;letter-spacing:-.01em}
+.cm-pane p{margin:0}
+.card-dialog[data-state="processing"] .cm-processing,.card-dialog[data-state="success"] .cm-success{opacity:1;transform:none}
+.cm-spinner{position:relative;width:68px;height:68px;margin:0 auto}
+.cm-spinner i{position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:var(--primary);border-right-color:rgba(94,224,189,.25);animation:cm-spin 1s linear infinite}
+.cm-spinner i + i{inset:10px;border-top-color:rgba(135,185,255,.9);border-right-color:rgba(135,185,255,.2);animation-duration:1.4s;animation-direction:reverse}
+@keyframes cm-spin{to{transform:rotate(360deg)}}
+.cm-check{position:relative;width:76px;height:76px;margin:0 auto;display:grid;place-items:center;color:var(--primary)}
+.cm-check svg{position:relative;filter:drop-shadow(0 0 12px rgba(94,224,189,.5))}
+.cm-check-c{stroke-dasharray:140;stroke-dashoffset:140}
+.cm-check-p{stroke-dasharray:40;stroke-dashoffset:40}
+.card-dialog[data-state="success"] .cm-check-c{animation:cm-draw .7s .1s cubic-bezier(.4,0,.2,1) forwards}
+.card-dialog[data-state="success"] .cm-check-p{animation:cm-draw .45s .65s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes cm-draw{to{stroke-dashoffset:0}}
+.cm-ring{position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(94,224,189,.6);opacity:0}
+.card-dialog[data-state="success"] .cm-ring{animation:cm-ripple 1.3s .7s ease-out 2 forwards}
+.card-dialog[data-state="success"] .cm-ring.r2{animation-delay:1s}
+@keyframes cm-ripple{from{opacity:.8;transform:scale(.8)}to{opacity:0;transform:scale(1.9)}}
+.card-dialog[data-state="success"] .cc-ok{animation:cm-badge .6s .5s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes cm-badge{from{transform:scale(0) rotate(-50deg);opacity:1}to{transform:none;opacity:1}}
+.cm-success-num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.12em;font-weight:700}
+
+/* ---------- telemóvel: cartão primeiro, formulário por baixo ---------- */
+@media(max-width:760px){
+  .card-dialog{padding:22px 16px 20px}
+  .cm-steps{margin:0 40px 14px 0;justify-content:flex-start;gap:4px}            /* deixa espaço para o botão × */
+  .cm-steps li{padding:5px 10px;font-size:11px}
+  .cm-steps li span{white-space:nowrap}
+  .cm-steps li:not(.on){padding:5px 6px}
+  .cm-steps li:not(.on) span{display:none}                                       /* passos inativos: só o número */
+  .cm-body{grid-template-columns:1fr;gap:16px}
+  .cm-note{margin-top:8px}
+  .cm-right{min-height:0}
+  .cm-input input{font-size:16px}                   /* evita o zoom automático no iPhone */
+  .cm-overlay{position:absolute;inset:0}
+  .cm-right:has(.cm-overlay) {min-height:300px}
+}
+@media(max-width:380px){.cm-row{grid-template-columns:1fr}}
+
+@media(prefers-reduced-motion:reduce){
+  .cc-shine,.wallet-card,.wallet-card.is-new{animation:none}
+  .wallet-card:after{display:none}
+  .cm-spinner i{animation-duration:2.4s}
+}
+@media print{.card-modal{display:none!important}}
+
+/* ---------- gestão de cartões (Área pessoal): ações e cartão desativado ---------- */
+.wc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; position: relative; z-index: 2; }
+.wc-actions .button.small { padding: 7px 12px; font-size: 12.5px; }
+.wallet-card.is-off { filter: saturate(.35) brightness(.85); }
+.wallet-card.is-off .wc-actions { filter: none; }
+.wc-badge.expired { color: #ffb4a8; border-color: rgba(255, 157, 144, .5); background: rgba(255, 157, 144, .12); }

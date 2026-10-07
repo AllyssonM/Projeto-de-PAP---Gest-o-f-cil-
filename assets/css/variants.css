@@ -1,0 +1,44 @@
+/* Estoque com tamanhos e cores + vendas ligadas ao estoque (assets/css/variants.css)
+   Só usa as variáveis, fontes e componentes que já existem (cartões, selos de estoque, tabelas, botões). */
+.stock-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; margin: 10px 0 6px; align-items: end; }
+.stock-filters .stock-f-q { grid-column: 1 / -1; }
+.stock-filters.ramo-off { display: none; }
+#stock-count { margin: 4px 0 10px; font-size: 13px; }
+
+.variants-card.is-inactive { opacity: .72; }
+.variants-card .product-thumb { width: 100%; max-height: 150px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
+.variants-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.stock-badge.inactive { color: var(--muted); }
+.variants-scroll { overflow-x: auto; margin-top: 8px; }
+.variants-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.variants-table th { text-align: left; color: var(--muted); font-size: 11.5px; font-weight: 700; padding: 5px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.variants-table td { padding: 6px; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.variants-table .num { text-align: right; }
+.variants-table tr.v-out td:not(:last-child) { color: var(--muted); }
+.variants-actions { display: flex; gap: 8px; margin-top: 10px; }
+.variants-actions .danger { color: var(--red); }
+
+.variants-editor { grid-column: 1 / -1; display: grid; gap: 8px; margin: 4px 0 10px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, .04); }
+.variants-editor.ramo-off { display: none; }
+.variants-title { margin: 0; }
+.variant-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 34px; gap: 8px; align-items: end; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.variant-row:last-of-type { border-bottom: 0; }
+.variant-row label { margin: 0; }
+.variant-row label span { font-size: 12px; }
+@media (max-width: 640px) { .variant-row { grid-template-columns: 1fr 1fr 34px; } .variant-row label:nth-child(3), .variant-row label:nth-child(4) { grid-column: span 1; } }
+#product-form.is-editing { border-color: var(--primary); }
+#product-form.is-saving { opacity: .75; }
+#product-cancel-edit[hidden] { display: none; }
+
+/* registar venda: escolha em cascata + aviso do estoque disponível */
+.sale-form .sale-hint { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
+.sale-form .sale-hint.error { color: var(--red); font-weight: 700; }
+.sale-form [readonly] { opacity: .85; }
+.sale-total-row { display: grid; gap: 4px; }
+.sale-auto { font-size: 12px; color: var(--muted); font-weight: 600; }
+.sale-auto button { border: 0; background: transparent; color: var(--primary); font: inherit; font-weight: 700; cursor: pointer; padding: 0 0 0 6px; text-decoration: underline; }
+.sale-recent .time-table .sale-cancelled td { color: var(--muted); text-decoration: line-through; }
+.sale-recent .sale-status { padding: 1px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; border: 1px solid currentColor; }
+.sale-recent .sale-status.completed { color: var(--primary); } .sale-recent .sale-status.cancelled { color: var(--red); }
+.sale-recent .sale-actions { display: flex; gap: 6px; }
+.rank-table .rank-pos { color: var(--muted); font-weight: 700; width: 28px; }

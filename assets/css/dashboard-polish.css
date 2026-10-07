@@ -1,0 +1,30 @@
+/* Revisão visual do painel: hierarquia, espaçamento e estados. Só refina; não muda IDs nem estrutura. */
+/* Barra de estado: discreta quando está tudo bem, em destaque só nos erros */
+.status:not(.error){padding:7px 14px;margin-bottom:12px;font-size:.82rem;background:transparent;border-color:var(--line);opacity:.8}
+.status.error{font-weight:700}
+/* Ritmo vertical único entre painéis e grelhas */
+.section>.panel,.section>.summary-grid,.section>.content-grid,.section>.cash-alerts{margin-bottom:20px}
+.cash-alerts:empty{display:none}
+/* Indicadores principais: números grandes, rótulos pequenos */
+.summary-card span{font-size:.8rem;letter-spacing:.02em;color:var(--muted)}
+.summary-card strong{font-size:clamp(1.35rem,2.2vw,1.9rem);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* Cabeçalhos de painel consistentes */
+.panel .eyebrow{font-size:.7rem;letter-spacing:.14em}
+.panel h2{font-size:1.2rem;margin-top:2px}
+/* Tabelas legíveis e sem cortes no telemóvel */
+.table-wrap,.panel:has(table){overflow-x:auto}
+table{font-variant-numeric:tabular-nums}
+@media (max-width:640px){
+  #recent-transactions td:nth-child(2),table:has(#recent-transactions) thead th:nth-child(2){display:none}
+  table:has(#recent-transactions){min-width:0!important;width:100%}
+  table:has(#recent-transactions) th,table:has(#recent-transactions) td{padding-left:6px;padding-right:6px}
+  .panel{padding:16px}
+  .summary-grid.four{grid-template-columns:repeat(2,1fr);gap:12px}
+  .summary-card strong{font-size:1.3rem}
+}
+/* Estados vazios com aspeto próprio */
+.product-grid>p,.stock-allok,.panel .empty{padding:18px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted)}
+/* Carregamento do resumo de estoque */
+.stock-overview.is-loading{min-height:120px;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.06) 50%,transparent 70%) 0 0/200% 100%;animation:gf-shimmer 1.4s linear infinite}
+@keyframes gf-shimmer{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.stock-overview.is-loading{animation:none}}

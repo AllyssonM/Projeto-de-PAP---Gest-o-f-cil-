@@ -1,0 +1,58 @@
+# Sem listagem de pastas e sem acesso a ficheiros internos do projeto
+Options -Indexes
+<FilesMatch "\.(sql|bat|md|log|sh|env|ini|bak)$">
+    Require all denied
+</FilesMatch>
+
+# =========================================================================
+# SEO, VELOCIDADE E SEGURANÇA DO TRÁFEGO  (precisa dos módulos rewrite, headers, expires e deflate; se faltar algum, o resto continua a funcionar)
+# =========================================================================
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# 1) HTTPS sempre, exceto em localhost (para o XAMPP continuar a funcionar). Atrás de um proxy/CDN, respeita X-Forwarded-Proto.
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteCond %{SERVER_NAME} !^(localhost|127\.0\.0\.1|\[::1\])$ [NC]
+# ...nem em redes locais (ex.: Raspberry Pi em 192.168.x.x ou raspberrypi.local), onde normalmente não há certificado
+RewriteCond %{SERVER_NAME} !^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)
+RewriteCond %{SERVER_NAME} !\.local$ [NC]
+RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [L,R=301]
+
+# 2) /robots.txt e /sitemap.xml são gerados por robots.php e sitemap.php (levam o endereço certo desta instalação)
+RewriteRule ^robots\.txt$ robots.php [L]
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+
+# 3) Endereços limpos nas páginas públicas (sem .php). ESTA LISTA TEM DE SER IGUAL a SEO_PUBLIC_PAGES em includes/seo.php (há um teste que o confirma).
+#    Quem abrir o endereço antigo (.php) ou com barra no fim é levado ao endereço limpo (301), para o Google guardar um só.
+#    O destino constrói-se a partir do pedido original (THE_REQUEST): um alvo relativo aqui levaria o caminho do disco do servidor à frente.
+RewriteCond %{THE_REQUEST} "^[A-Z]{3,9}\s(.*/)?(politica-privacidade|politica-cookies|termos-e-condicoes|informacao-legal)\.php[\s?]"
+RewriteRule ^ %1%2 [R=301,L]
+RewriteCond %{THE_REQUEST} "^[A-Z]{3,9}\s(.*/)?(politica-privacidade|politica-cookies|termos-e-condicoes|informacao-legal)/[\s?]"
+RewriteRule ^ %1%2 [R=301,L]
+RewriteRule ^(politica-privacidade|politica-cookies|termos-e-condicoes|informacao-legal)$ $1.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+Header always set X-Content-Type-Options "nosniff"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+# HSTS só quando a ligação é segura (um ano)
+Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on'"
+</IfModule>
+
+# Compressão (texto) e cache do navegador. Imagens: 30 dias. CSS/JS: 1 dia (mudam mais; o service worker também os atualiza).
+<IfModule mod_deflate.c>
+AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/xml application/manifest+json image/svg+xml
+</IfModule>
+<IfModule mod_expires.c>
+ExpiresActive On
+ExpiresByType image/webp "access plus 30 days"
+ExpiresByType video/mp4 "access plus 30 days"
+ExpiresByType video/webm "access plus 30 days"
+ExpiresByType image/png "access plus 30 days"
+ExpiresByType image/jpeg "access plus 30 days"
+ExpiresByType image/svg+xml "access plus 30 days"
+ExpiresByType text/css "access plus 1 day"
+ExpiresByType text/javascript "access plus 1 day"
+ExpiresByType application/javascript "access plus 1 day"
+</IfModule>

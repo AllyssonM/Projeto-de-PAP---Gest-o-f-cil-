@@ -1,0 +1,163 @@
+/* =========================================================
+   DASHBOARD (dashboard.php) - acrescenta ao style.css:
+   visão geral, gráfico, calculadora, relatório e impressão
+   ========================================================= */
+
+/* ---------- estado (mensagens) ---------- */
+.status.error{background:rgba(255,157,144,.12);border-color:rgba(255,157,144,.35);color:var(--red)}
+
+/* ---------- boas-vindas ---------- */
+.welcome-row{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:22px}
+.welcome-row h2{margin:0;font-size:28px}
+.welcome-row p{margin:0 0 2px}
+
+/* ---------- cartões de resumo ---------- */
+.summary-grid.four{grid-template-columns:repeat(4,1fr)}
+.summary-grid.two{grid-template-columns:repeat(2,1fr)}
+.summary-card span{font-size:13px}
+.summary-card strong{font-size:26px}
+.positive{color:var(--primary)!important}
+.negative{color:var(--red)!important}
+
+/* ---------- título de painel com ação ---------- */
+.panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.text-link{background:none;border:0;padding:0;color:var(--muted);font-weight:700;font-size:14px;cursor:pointer;transition:.2s}
+.text-link:hover{color:var(--primary)}
+
+/* ---------- gráfico mensal ---------- */
+.bar-chart{height:240px;display:flex;align-items:flex-end;justify-content:space-around;gap:14px;padding:16px 5px 0;border-bottom:1px solid var(--line)}
+.bar-group{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;color:var(--muted);font-size:11px;text-transform:capitalize}
+.bars{height:190px;display:flex;align-items:flex-end;gap:4px}
+.bar{width:14px;border-radius:5px 5px 1px 1px;min-height:3px}
+.income-bar{background:linear-gradient(180deg,var(--primary),#238d78)}
+.expense-bar{background:linear-gradient(180deg,var(--red),#a84955)}
+.legend{display:flex;gap:16px;color:var(--muted);font-size:12px;margin-top:13px}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.legend-income{background:var(--primary)}
+.legend-expense{background:var(--red)}
+
+/* ---------- ações rápidas ---------- */
+.quick-list{display:grid;gap:10px}
+.quick-action{display:grid;gap:3px;text-align:left;padding:13px;border:1px solid var(--line);background:rgba(255,255,255,.065);border-radius:12px;color:var(--ink);cursor:pointer;font:inherit;transition:.2s}
+.quick-action:hover{background:rgba(255,255,255,.12);border-color:rgba(94,224,189,.35);transform:translateY(-2px)}
+.quick-action b{display:flex;gap:10px;color:var(--primary)}
+.quick-action b span{color:var(--ink)}
+.quick-action small{color:var(--muted)}
+
+/* ---------- tabela: eliminar ---------- */
+.delete-button{border:0;background:transparent;color:var(--red);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:6px}
+.delete-button:hover{background:rgba(255,157,144,.15)}
+
+/* ---------- calculadora ---------- */
+.calculator-card{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;margin-top:20px}
+.calculator-fields{display:grid;gap:15px}
+.calc-result{padding:30px;border:1px solid rgba(94,224,189,.25);border-radius:18px;background:rgba(94,224,189,.08)}
+.calc-result span,.calc-result small{display:block;color:var(--muted)}
+.calc-result strong{display:block;font-size:42px;color:var(--primary);margin:10px 0;letter-spacing:-.04em}
+
+/* ---------- calculadora normal ---------- */
+.calc-panel{outline:0}
+.calc-panel:focus-visible{box-shadow:var(--shadow),0 0 0 3px rgba(94,224,189,.3)}
+.calc-screen{display:grid;justify-items:end;gap:2px;padding:14px 16px;margin-bottom:14px;border-radius:16px;border:1px solid var(--line);background:rgba(0,0,0,.18);overflow:hidden}
+.calc-screen small{min-height:18px;color:var(--muted);font-size:13px}
+.calc-screen output{font-size:36px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.key{height:54px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.07);color:var(--ink);font:inherit;font-size:19px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s}
+.key:hover{background:rgba(255,255,255,.14)}
+.key:active,.key.pressed{transform:scale(.94)}
+.key.fn{color:var(--muted)}
+.key.op{color:var(--primary);background:rgba(94,224,189,.1)}
+.key.eq{background:linear-gradient(135deg,#5ee0bd,#36b997);color:#06221d;border-color:transparent}
+.full-btn{width:100%;margin-top:12px}
+.calc-hint{font-size:12px;text-align:center;margin:10px 0 0}
+
+/* ---------- boas-vindas: tempo ---------- */
+.welcome-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.weather-chip{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;transition:.2s}
+.weather-chip:hover{background:rgba(255,255,255,.15);border-color:rgba(94,224,189,.35)}
+
+/* ---------- previsão do tempo ---------- */
+.weather-now{display:flex;align-items:center;gap:18px;margin:6px 0 18px}
+.weather-icon{font-size:64px;line-height:1;filter:drop-shadow(0 8px 18px rgba(0,0,0,.25))}
+.weather-now strong{display:block;font-size:54px;letter-spacing:-.05em;line-height:1}
+.weather-now span{color:var(--muted)}
+.weather-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.weather-stats div{padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.06)}
+.weather-stats span{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.weather-stats b{font-size:18px}
+.weather-tip{margin:16px 0 0;padding:12px 14px;border-radius:13px;background:rgba(94,224,189,.09);border:1px solid rgba(94,224,189,.2)}
+.weather-tip:empty{display:none}
+.weather-sub{margin:22px 0 10px;font-size:15px}
+.forecast{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.forecast-day{display:grid;justify-items:center;gap:3px;padding:12px 6px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.05);text-transform:capitalize}
+.forecast-day span{font-size:12px;color:var(--muted);font-weight:700}
+.forecast-day b{font-size:26px}
+.forecast-day small{color:var(--muted)}
+.forecast-day em{font-style:normal;font-size:11px;color:var(--blue)}
+.weather-results{display:grid;gap:8px;margin-top:14px}
+.weather-result{display:grid;gap:2px;text-align:left;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.06);color:var(--ink);font:inherit;cursor:pointer;transition:.2s}
+.weather-result:hover{border-color:var(--primary);background:rgba(94,224,189,.1)}
+.weather-result small{color:var(--muted)}
+.weather-source{font-size:12px;margin:16px 0 0}
+
+/* ---------- rodapé ---------- */
+.page-footer{text-align:center;padding:0 20px 40px;color:var(--muted);font-size:13px}
+
+/* ---------- relatório ---------- */
+.report-panel .muted{margin:0 0 18px}
+.report-summary{padding:18px 20px;margin-bottom:14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.065)}
+.report-summary h3{margin:0 0 8px}
+.report-summary p{margin:4px 0;color:var(--muted)}
+.report-summary .report-line{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);color:var(--ink)}
+.report-summary .report-line:last-child{border-bottom:0}
+
+/* ---------- responsivo ---------- */
+@media(max-width:900px){
+  .summary-grid.four{grid-template-columns:repeat(2,1fr)}
+  .calculator-card{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .weather-stats{grid-template-columns:repeat(2,1fr)}
+  .forecast{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:520px){
+  .summary-grid.four,.summary-grid.two{grid-template-columns:1fr}
+  .welcome-row{align-items:flex-start;flex-direction:column}
+  .bar{width:9px}
+}
+
+/* ---------- impressão / PDF: fundo branco, sem menus ---------- */
+@media print{
+  html{background:#fff!important}
+  body{background:#fff;color:#000}
+  body:before,body:after{display:none}
+  .topbar,.tabs,.adaptive-banner,.status,.welcome-row,.no-print,.profile-modal,.reminder-modal,.page-footer,.cash-alerts,.heart-burst{display:none!important}
+  .container{width:100%;margin:0;padding:0}
+  .panel{background:#fff;border:1px solid #ccc;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+  .panel:before{display:none}
+  .report-summary{background:#fff;border-color:#ccc}
+  h1,h2,h3,p,td,th,.muted,.report-line,.eyebrow{color:#000!important}
+}
+
+/* ---------- abas coladas por baixo do topo (altura medida por JS) ---------- */
+.tabs{top:var(--topbar-h,101px)}
+
+/* ---------- menu: destaque de vidro na aba ativa (desliza entre abas) ----------
+   Substitui apenas o sublinhado da aba ativa; o resto do menu fica igual. */
+.nav-tab.active{border-bottom-color:transparent}              /* mantém a mesma altura, sem sublinhado */
+.tabs .nav-tab{position:relative;z-index:1}                   /* texto por cima do vidro */
+.tab-glass{
+  position:absolute;left:0;top:0;z-index:0;width:0;height:0;
+  border-radius:12px;pointer-events:none;opacity:0;
+  background:linear-gradient(135deg,rgba(94,224,189,.20),rgba(255,255,255,.07));
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(10px) saturate(160%);-webkit-backdrop-filter:blur(10px) saturate(160%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 6px 18px rgba(94,224,189,.18);
+  will-change:transform,width;
+}
+.tab-glass.placed{opacity:1}
+/* ritmo mais uniforme (arranca e assenta com suavidade), para o movimento ser bem visível */
+.tab-glass.ready{transition:transform .65s cubic-bezier(.65,.05,.25,1),width .65s cubic-bezier(.65,.05,.25,1)}
+/* com "reduzir animações" o vidro continua a deslizar, só mais depressa */
+/* (o style.css desliga todas as transições nesse modo; aqui só o vidro volta a deslizar) */
+@media(prefers-reduced-motion:reduce){.tab-glass.ready{transition:transform .25s cubic-bezier(.65,.05,.25,1),width .25s cubic-bezier(.65,.05,.25,1)!important}}
