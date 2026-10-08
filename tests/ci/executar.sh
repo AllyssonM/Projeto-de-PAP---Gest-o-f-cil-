@@ -77,7 +77,8 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
     if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
         { echo "### Testes do Lumina"; echo; echo "${RESUMO:-sem resumo (a suite não chegou ao fim)}"; } >> "$GITHUB_STEP_SUMMARY"
     fi
-    grep -E '^  FALHOU' "$SAIDA" | head -n 10 | cut -c1-300 | while IFS= read -r linha; do echo "::error title=Teste falhado::$linha"; done
+    # (sem falhas o grep não encontra nada e devolve 1: "|| true" evita que isso pare o script)
+    grep -E '^  FALHOU' "$SAIDA" | head -n 10 | cut -c1-300 | while IFS= read -r linha; do echo "::error title=Teste falhado::$linha"; done || true
 fi
 if [ "$RC" -ne 0 ]; then
     echo; echo "Falhou. Registo de erros do servidor PHP (últimas linhas):"; tail -n 40 "$LOG" || true
