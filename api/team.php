@@ -68,6 +68,7 @@ try {
     }
 
     if ($action === 'invite') {                                     // (re)enviar o convite por email
+        rate_limit_enforce('mail', (string)$user['id']);
         $employee = find_employee($ownerId, (int)($data['id'] ?? 0));
         audit('team_invite_sent', ['employee_id' => (int)$employee['id']], $user);
         $sent = send_invite($employee);
@@ -112,6 +113,7 @@ try {
         json_response(['success' => true, 'id' => $id]);
     }
 
+    if (!empty($data['send_invite'])) rate_limit_enforce('mail', (string)$user['id']);     // antes de criar a conta: um 429 não pode deixar o funcionário a meio
     $password = (string)($data['password'] ?? '');
     if ($password === '') $password = temp_password();
     if (strlen($password) < PASSWORD_MIN_LENGTH) json_response(['success' => false, 'error' => 'A palavra-passe provisória precisa de pelo menos ' . PASSWORD_MIN_LENGTH . ' caracteres.'], 400);

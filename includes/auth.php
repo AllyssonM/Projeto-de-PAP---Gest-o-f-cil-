@@ -6,6 +6,8 @@ require_once __DIR__ . '/crypto.php';     // cifra de segredos (TOTP, Google)
 require_once __DIR__ . '/totp.php';       // autenticação em dois passos
 require_once __DIR__ . '/uploads.php';    // fotos e logos
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/client_ip.php';  // client_ip()
+require_once __DIR__ . '/rate_limit.php'; // limite de pedidos (429)
 
 if (session_status() === PHP_SESSION_NONE) {
     // Cookie de sessão mais seguro: o JavaScript não o lê (HttpOnly), não é enviado em pedidos
@@ -102,6 +104,10 @@ function require_login(): array
         header('Location: index.php');
         exit;
     }
+    // limite de pedidos por utilizador (só a API: as páginas não contam). Passou do máximo: 429 e nada mais é processado.
+    if (is_api_request()) {
+        rate_limit_enforce('api', (string)$user['id']);
+    }
     // palavra-passe provisória: só pode usar a API de autenticação até a trocar
     if ($user['must_change_password'] && is_api_request() && !str_contains($_SERVER['SCRIPT_NAME'] ?? '', '/api/auth.php')) {
         json_response(['success' => false, 'error' => 'Altera a tua palavra-passe provisória para continuar.'], 403);
@@ -135,10 +141,7 @@ const LOGIN_MAX_PER_EMAIL = 8;     // falhas por conta, no período
 const LOGIN_MAX_PER_IP = 40;       // falhas por IP (alto, para não bloquear uma rede partilhada, como uma escola)
 const LOGIN_WINDOW_MINUTES = 10;
 
-function client_ip(): string
-{
-    return substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
-}
+/* client_ip() (o IP do cliente, com suporte opcional a proxies de confiança) está em includes/client_ip.php */
 
 /** True se esta conta ou este IP já falharam demasiadas vezes. Se a tabela não existir, não bloqueia (o login nunca deixa de funcionar). */
 function login_throttled(string $email): bool

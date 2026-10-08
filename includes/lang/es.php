@@ -160,4 +160,5 @@ Para preguntas libres y con contexto, el administrador puede activar la IA (ver 
     'quem te deve e quanto' => 'quién te debe y cuánto',
     'vendas, despesas, saldo e o resumo do mês' => 'ventas, gastos, saldo y el resumen del mes',
     'É só escrever a pergunta, como falarias com um colega.' => 'Solo escribe la pregunta, como si hablaras con un compañero.',
+    'Demasiados pedidos. Aguarda um momento e tenta outra vez.' => 'Demasiadas solicitudes. Espera un momento y vuelve a intentarlo.',
 ];

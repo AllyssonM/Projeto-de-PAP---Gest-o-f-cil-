@@ -46,6 +46,7 @@ try {
     $password = (string)($data['password'] ?? '');
 
     if ($action === 'login') {
+        rate_limit_enforce_ip('auth_login');                       // inundação de tentativas vindas do mesmo IP (as falhas por conta têm o limite próprio abaixo)
         if (login_throttled($email)) {
             json_response(['success' => false, 'error' => 'Demasiadas tentativas falhadas. Aguarda ' . LOGIN_WINDOW_MINUTES . ' minutos e tenta outra vez.'], 429);
         }
@@ -76,6 +77,7 @@ try {
 
     // Segundo passo do login: código de 6 dígitos da app de autenticação, ou um código de recuperação.
     if ($action === 'login_2fa') {
+        rate_limit_enforce_ip('auth_login');
         $pending = $_SESSION['pending_2fa'] ?? null;
         if (!$pending || $pending['until'] < time()) {
             unset($_SESSION['pending_2fa']);
@@ -117,6 +119,7 @@ try {
     }
 
     if ($action === 'register') {
+        rate_limit_enforce_ip('auth_register');                    // contas em massa / emails de confirmação em série
         $name = trim((string)($data['name'] ?? ''));
         if (mb_strlen($name) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < PASSWORD_MIN_LENGTH) {
             json_response(['success' => false, 'error' => 'Preencha nome, email válido e palavra-passe com pelo menos ' . PASSWORD_MIN_LENGTH . ' caracteres.'], 400);
@@ -143,6 +146,8 @@ try {
     // 1) "Esqueci-me": envia um link por email. A resposta é SEMPRE a mesma, exista o email ou não.
     if ($action === 'forgot') {
         $email = Validator::make($data)->email('email')->orFail()['email'];
+        rate_limit_enforce_ip('auth_forgot');                              // por IP...
+        rate_limit_enforce('auth_forgot_email', strtolower($email));       // ...e por email-alvo, exista ou não (a resposta é igual: não revela contas)
         if (login_throttled('reset:' . $email)) {
             json_response(['success' => false, 'error' => 'Demasiados pedidos. Tenta outra vez dentro de alguns minutos.'], 429);
         }
@@ -160,6 +165,7 @@ try {
 
     // 2) Escolher a nova palavra-passe com o link do email (purpose: 'reset' = recuperação, 'invite' = convite de funcionário).
     if ($action === 'reset_password') {
+        rate_limit_enforce_ip('auth_token');
         $purpose = ($data['purpose'] ?? 'reset') === 'invite' ? 'invite' : 'reset';
         $password = (string)($data['password'] ?? '');
         if (strlen($password) < PASSWORD_MIN_LENGTH) {
@@ -180,6 +186,7 @@ try {
 
     // 3) Confirmar o email (também usado pela página verificar-email.php).
     if ($action === 'verify_email') {
+        rate_limit_enforce_ip('auth_token');
         $userId = verify_email_token((string)($data['token'] ?? ''));
         if ($userId === null) json_response(['success' => false, 'error' => 'Este link expirou ou já foi usado.'], 400);
         json_response(['success' => true]);
@@ -189,6 +196,7 @@ try {
     // Teste de envio: o dono manda um email de teste para o PRÓPRIO endereço e vê, sem enganos, se saiu ou não.
     if ($action === 'test_mail') {
         $user = require_login(); require_owner($user); check_csrf();
+        rate_limit_enforce('mail', (string)$user['id']);
         $cfg = mail_config();
         $ok = send_mail((string)$user['email'], L('Teste de email do Lumina'), mail_layout(L('O envio de email funciona'), L('Se estás a ler esta mensagem, o Lumina consegue enviar emails a partir deste servidor.'), null, null, L('Pode apagar esta mensagem.')));
         $r = mail_last_result();

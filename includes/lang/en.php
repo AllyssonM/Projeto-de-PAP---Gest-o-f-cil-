@@ -160,4 +160,5 @@ For free-form questions with context, the administrator can enable AI (see READM
     'quem te deve e quanto' => 'who owes you and how much',
     'vendas, despesas, saldo e o resumo do mês' => 'sales, expenses, balance and this month\'s summary',
     'É só escrever a pergunta, como falarias com um colega.' => 'Just type your question, as if you were talking to a colleague.',
+    'Demasiados pedidos. Aguarda um momento e tenta outra vez.' => 'Too many requests. Wait a moment and try again.',
 ];

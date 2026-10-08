@@ -282,6 +282,7 @@ Alternativa com o phpMyAdmin (`http://localhost/phpmyadmin` > **Importar**): imp
 | `migracao_v12_orcamentos_e_importacao.sql` | Orçamentos mensais por categoria e identificador de importação (para anular uma importação de CSV) |
 | `migracao_v13_funcionarios.sql` | Tarefas, metas, mensagens, observações do líder, avisos, registo de entradas e a pausa dos funcionários |
 | `migracao_v14_meta_ads.sql` | Ligação à Meta Ads (token cifrado) e cópia dos dados mais recentes |
+| `migracao_v17_limite_pedidos.sql` | Tabela `rate_limits` (contadores do limite de pedidos; guarda só códigos de dispersão, nunca IP nem email) |
 | `migracao_v16_variacoes_vendas.sql` | Variações de produto (tamanho/cor), marca, cabeçalho das vendas, retrato do produto na venda, estado (concluída/anulada) e ligação dos movimentos de estoque |
 
 Nunca coloque cópias de segurança da base de dados (ficheiros `.sql` com dados reais) dentro da pasta do site.
@@ -413,7 +414,7 @@ return [
 
 ## Verificação de saúde (`/health`)
 
-Um endereço para monitores de disponibilidade (Uptime Kuma, UptimeRobot, um `cron` no Raspberry Pi...) saberem se o Lumina está vivo e se fala com a base de dados. Estado: **implementado e testado** com um servidor PHP real (base de dados parada, migrações em falta, segredo certo/errado, métodos, cabeçalhos). **Ainda não testado num Apache real**: a regra `RewriteRule ^health$ health.php` está no `.htaccess`; `/health.php` funciona sempre.
+Um endereço para monitores de disponibilidade (Uptime Kuma, UptimeRobot, um `cron` no Raspberry Pi...) saberem se o Lumina está vivo e se fala com a base de dados. Estado: **implementado e testado** com um servidor PHP real (base de dados parada, migrações em falta, segredo certo/errado, métodos, cabeçalhos). Testado também num **Apache real** (`/health` sem `.php`, cabeçalhos, `no-store`) por `tests/apache/check_htaccess.py`.
 
 **Resposta pública** (qualquer pessoa pode pedir). Não mostra versões, caminhos, nome da base de dados nem mensagens de erro:
 
@@ -465,6 +466,7 @@ config/database.php        ligação PDO ao MySQL (sem palavras-passe: variávei
 bin/criar_utilizador_bd.php  cria o utilizador MySQL da aplicação (só SELECT, INSERT, UPDATE, DELETE)
 includes/env.php           variáveis de ambiente e ficheiros config/*.local.php
 health.php                 /health: verificação de saúde para monitores (includes/health.php tem a lógica)
+includes/rate_limit.php    limite de pedidos (429); includes/client_ip.php: IP do cliente atrás de proxies de confiança
 .github/workflows/ci.yml   testes automáticos no GitHub (tests/ci/executar.sh é o que corre lá)
 bin/backup_bd.php          cópia de segurança da base de dados (comprimida, verificada, cifra opcional, retenção)
 bin/restaurar_bd.php       restaurar uma cópia (por omissão para uma base nova)
@@ -635,6 +637,8 @@ Esta versão passou por uma revisão de segurança, desempenho e correção (ver
 | **Permissões** | O servidor volta a ler o utilizador em cada pedido: desativar um funcionário ou mudar as permissões conta logo. Um módulo sem entrada no mapa de permissões é recusado (falha fechado) |
 | **Isolamento** | Todas as consultas filtram pelo dono do negócio (`tenant_id`); a agenda é pessoal |
 | **Erros** | Os detalhes técnicos (por exemplo, erros SQL) ficam só no log do PHP. O cliente vê uma mensagem genérica. Para depurar, põe `APP_DEBUG` a `true` em `config/app.php` |
+| **Cabeçalhos HTTP** | `X-Frame-Options`, CSP aplicada (`frame-ancestors`, `base-uri`, `form-action`, `object-src`), `Permissions-Policy`, sem `X-Powered-By`; mais uma CSP estrita **só de relatório** (medida com Chromium: falta converter 2 scripts de dados para a poder aplicar, precisa da sua autorização). Ver `docs/SEGURANCA_CABECALHOS.md` |
+| **Limite de pedidos** | 429 + `Retry-After` por utilizador na API e por IP/email nas ações anónimas (login, registo, recuperar palavra-passe); falha «aberta» se a BD falhar. Migração v17, `includes/rate_limit.php`; ajustável por `LUMINA_RATE_*`; IP real atrás de proxy só com `LUMINA_TRUSTED_PROXIES` |
 | **Ficheiros internos** | `.htaccess` impede o acesso por URL a `config/`, `includes/`, `database/`, `docs/` e a ficheiros `.sql`, `.bat`, `.md`, `.log`; sem listagem de pastas |
 
 **Antes de pôr o site online:** muda a palavra-passe do `root` do MySQL (por omissão está vazia no XAMPP), cria o utilizador da aplicação com `bin/criar_utilizador_bd.php` (o Lumina recusa arrancar com `root` num site público), usa HTTPS e põe as chaves (IA, SMTP, Meta, Google) só em variáveis de ambiente ou em ficheiros `config/*.local.php`, nunca nos ficheiros que vão para o GitHub.
@@ -710,7 +714,8 @@ Cartões reais (só demonstração: não há integração com um fornecedor de p
 - `php tests/run.php`: testes de API e de unidades (precisa do Lumina a funcionar e de uma base de dados de TESTE). Os testes novos vivem em `tests/sections/*.php` (um ficheiro por tema). Alguns criam uma base e um utilizador temporários: precisam da conta de administração (`LUMINA_DB_ADMIN_USER` / `LUMINA_DB_ADMIN_PASS`; por omissão `root` sem palavra-passe) e são saltados se ela não existir.
 - `php tests/secret_scan.php`: procura segredos escritos no código.
 - `tests/browser/`: testes de navegador com Playwright (ver o README dessa pasta).
-- `tests/apache/check_htaccess.py`: as regras do `.htaccess` num Apache real.
+- `tests/apache/check_htaccess.py`: as regras do `.htaccess` e os cabeçalhos de segurança num Apache real (`bash tests/apache/iniciar_apache.sh start` arranca um Apache privado só para os testes).
+- `tests/browser/csp_audit.py`: percorre o site num Chromium e regista violações da CSP.
 
 ### Testes automáticos no GitHub (CI)
 
@@ -719,13 +724,14 @@ Em cada *push* e em cada Pull Request o GitHub corre `.github/workflows/ci.yml` 
 1. verifica a sintaxe de **todos** os ficheiros PHP;
 2. instala uma base de dados **nova**, como o `instalar_base_dados.bat` (schema + migrações, pela mesma ordem). Isto apanha migrações que só funcionam numa base já «suja»;
 3. cria o utilizador `lumina_app` (só SELECT, INSERT, UPDATE e DELETE) e corre a aplicação com ele, como em produção;
-4. corre `php tests/run.php` e `php tests/secret_scan.php`.
+4. corre `php tests/run.php` e `php tests/secret_scan.php`;
+5. arranca um **Apache real** (com PHP, em portas altas, sem tocar no do sistema) e corre `tests/apache/check_htaccess.py`: regras do `.htaccess`, cabeçalhos de segurança, `/health`, ficheiros de cópias negados.
 
 O resultado aparece no separador **Actions** do GitHub e em cada Pull Request. **Não usa nenhum segredo do GitHub**: a palavra-passe de administração da base de dados de teste é gerada em cada execução, fica mascarada nos registos e desaparece com a máquina. As ferramentas do GitHub (`actions/checkout`, `shivammathur/setup-php`) estão fixadas por código de commit e o token do GitHub só pode ler o código.
 
 Para repetir o CI na sua máquina, com um MariaDB **vazio** e local: `CI=true LUMINA_DB_ADMIN_PASS=... bash tests/ci/executar.sh`. O script recusa-se a correr sem `CI=true`, contra um servidor que não seja local ou se a base `gestao_facil` já tiver tabelas (nunca apaga nada) e cria `config/database.local.php`.
 
-**Ainda não corre no CI:** os testes de navegador (`tests/browser`, Playwright) e o teste do `.htaccess` num Apache real.
+**Ainda não corre no CI:** os testes de navegador (`tests/browser`, Playwright), incluindo `csp_audit.py`.
 
 **Recomendado (só o dono do repositório pode):** em *Settings → Branches*, proteger o `main` exigindo que o teste «CI / PHP 8.3 + MariaDB» passe antes de juntar um Pull Request.
 

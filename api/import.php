@@ -32,6 +32,7 @@ try {
         json_response(['success' => true, 'deleted' => $st->rowCount()]);
     }
     if (!in_array($action, ['preview', 'import'], true) || !$isUpload) json_response(['success' => false, 'error' => 'Escolhe um ficheiro CSV.'], 400);
+    rate_limit_enforce('import', (string)$user['id']);
 
     $f = $_FILES['file'];
     if (($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {

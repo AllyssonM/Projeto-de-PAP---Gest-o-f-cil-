@@ -35,6 +35,7 @@ function rows(string $sql, array $params = []): array
 try {
     /* ---------------------- EXPORTAR ---------------------- */
     if ($method === 'GET' && $action === 'export') {
+        rate_limit_enforce('export', (string)$uid);
         $out = ['sistema' => 'Lumina', 'gerado_em' => (new DateTime('now', app_timezone()))->format('c'), 'tipo_de_conta' => $owner ? 'administrador' : 'funcionário'];
         $out['conta'] = rows('SELECT id, name, email, phone, job_title, department, hired_at, role, status, created_at, last_login_at, email_verified_at, preferences FROM users WHERE id = ?', [$uid])[0] ?? [];
         $out['sessoes'] = rows('SELECT created_at, ip, user_agent, last_seen_at, revoked_at FROM user_sessions WHERE user_id = ? ORDER BY id DESC', [$uid]);
