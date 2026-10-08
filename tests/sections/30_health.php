@@ -235,10 +235,10 @@ section('Saúde (/health): base de dados em baixo ou configuração recusada', f
     // O /health não contorna a proteção "root em site público": mesmo servidor, mas a escutar num IP público.
     $prepend = sys_get_temp_dir() . '/lumina_fake_addr_h_' . bin2hex(random_bytes(4)) . '.php';
     file_put_contents($prepend, "<?php \$_SERVER['SERVER_ADDR'] = '8.8.8.8';");
-    $srv = test_server_start(['LUMINA_DB_USER' => 'root', 'LUMINA_DB_PASS' => ''], ['auto_prepend_file' => $prepend]);
+    $srv = test_server_start(['LUMINA_DB_USER' => 'root', 'LUMINA_DB_PASS' => 'qualquer-coisa'], ['auto_prepend_file' => $prepend]);
     try {
         [$st, , $body] = test_http($srv['port'], 'GET', 'health.php');      // (o servidor embutido só aplica o auto_prepend_file a ficheiros pedidos diretamente, não às rotas do router.php)
-        check('root sem palavra-passe num site "público" → 503 (a proteção da BD também vale aqui)', $st === 503 && str_contains($body, '"database":"fail"'), "estado $st: $body");
+        check('root num site "público" → 503 (a proteção da BD também vale aqui)', $st === 503 && str_contains($body, '"database":"fail"'), "estado $st: $body");
         check('...o cliente não vê o motivo; o log sim', !str_contains($body, 'root') && str_contains((string)file_get_contents($srv['log']), 'não se liga à base de dados como "root"'));
     } finally { ($srv['stop'])(); @unlink($srv['log']); @unlink($prepend); }
 });

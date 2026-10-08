@@ -58,12 +58,14 @@ section('Configuração da BD: site "público" com root é recusado (pedido web 
     $root = dirname(__DIR__, 2);
     $prepend = sys_get_temp_dir() . '/lumina_fake_addr_' . bin2hex(random_bytes(4)) . '.php';
     file_put_contents($prepend, "<?php \$_SERVER['SERVER_ADDR'] = '8.8.8.8';");           // o servidor "escuta" num IP público
-    $run = function (?string $prependFile) use ($root): array {
+    $run = function (?string $prependFile, bool $forceRoot) use ($root): array {
         $sock = stream_socket_server('tcp://127.0.0.1:0'); $port = (int)explode(':', (string)stream_socket_get_name($sock, false))[1]; fclose($sock);
         $log = sys_get_temp_dir() . '/lumina_srv_' . bin2hex(random_bytes(4)) . '.log';
         $cmd = [PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $root, '-d', 'log_errors=1', '-d', 'error_log=' . $log];
         if ($prependFile) { array_push($cmd, '-d', 'auto_prepend_file=' . $prependFile); }
-        $env = array_fill_keys(['LUMINA_DB_HOST', 'LUMINA_DB_PORT', 'LUMINA_DB_NAME', 'LUMINA_DB_USER', 'LUMINA_DB_PASS'], '') + (getenv() ?: []);
+        // Cenário "público": força o utilizador root (com qualquer palavra-passe: root é sempre recusado), seja qual for config/database.local.php.
+        // Cenário "localhost": usa a configuração do próprio ambiente de testes (root no XAMPP, lumina_app no CI), que tem de funcionar.
+        $env = ($forceRoot ? ['LUMINA_DB_USER' => 'root', 'LUMINA_DB_PASS' => 'qualquer-coisa'] : []) + (getenv() ?: []);
         $p = proc_open(array_merge($cmd, [$root . '/router.php']), [0 => ['pipe', 'r'], 1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, $root, $env);
         for ($i = 0; $i < 60; $i++) { if (@fsockopen('127.0.0.1', $port, $en, $es, 0.1)) { break; } usleep(100000); }
         // "me" não toca na base de dados; o login sim. Duas chamadas com o mesmo cookie de sessão.
@@ -83,11 +85,11 @@ section('Configuração da BD: site "público" com root é recusado (pedido web 
         $logText = is_file($log) ? (string)file_get_contents($log) : ''; @unlink($log);
         return [$status, $body, $logText];
     };
-    [$s1, $b1, $l1] = $run($prepend);
-    check('root + servidor num IP público → 500 (a aplicação recusa arrancar)', $s1 === 500, "estado $s1");
+    [$s1, $b1, $l1] = $run($prepend, true);
+    check('root + servidor num IP público → 500 (a aplicação recusa arrancar), mesmo com palavra-passe', $s1 === 500, "estado $s1");
     check('o motivo fica no log do PHP, em português', str_contains($l1, 'não se liga à base de dados como "root"'), $l1);
     check('...e o cliente NÃO vê o motivo (resposta genérica)', !str_contains($b1, 'root') && !str_contains($b1, 'criar_utilizador_bd'), $b1);
-    [$s2, $b2] = $run(null);
+    [$s2, $b2] = $run(null, false);
     check('o mesmo servidor em localhost funciona normalmente (login errado → 401, não 500)', $s2 === 401, "estado $s2: " . substr($b2, 0, 120));
     @unlink($prepend);
 });

@@ -1,0 +1,75 @@
+# =========================================================================
+# TESTES AUTOMÁTICOS NO GITHUB  (.github/workflows/ci.yml)
+# -------------------------------------------------------------------------
+# Corre em cada push e em cada Pull Request: sintaxe de todo o PHP, base de dados nova (schema + migrações), a suite php tests/run.php
+# e o detetor de segredos. Não precisa de NENHUM segredo do GitHub: a palavra-passe da base de dados de teste é gerada em cada execução,
+# fica mascarada nos registos e desaparece com a máquina. Nunca escreva aqui chaves, palavras-passe ou tokens.
+#
+# NÃO corre (ainda): os testes de navegador (tests/browser, Playwright) e o teste das regras do .htaccess num Apache real.
+# =========================================================================
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# O mínimo de poderes para o token do GitHub: só ler o código.
+permissions:
+  contents: read
+
+# Um push seguido de um Pull Request (ou novos pushes) da mesma ramificação não correm em duplicado.
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: PHP 8.3 + MariaDB
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      LUMINA_DB_ADMIN_HOST: 127.0.0.1
+      LUMINA_DB_ADMIN_PORT: '3306'
+      LUMINA_DB_ADMIN_USER: root
+    steps:
+      # As ferramentas do GitHub estão fixadas por código de commit (não por etiqueta, que pode ser movida); a versão vai no comentário.
+      - name: Código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: PHP 8.3
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.3'
+          extensions: ctype, curl, dom, gd, json, mbstring, openssl, pdo_mysql, session, sodium, xml, zlib
+          tools: none
+          coverage: none
+          ini-values: error_reporting=E_ALL
+
+      - name: Sintaxe de todos os ficheiros PHP
+        run: |
+          set -o pipefail
+          find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 -P4 php -l > "$RUNNER_TEMP/lint.log" 2>&1 || true
+          if grep -v '^No syntax errors detected' "$RUNNER_TEMP/lint.log"; then
+            echo "Há ficheiros PHP com erros de sintaxe (acima)."
+            exit 1
+          fi
+          echo "$(wc -l < "$RUNNER_TEMP/lint.log") ficheiros PHP sem erros de sintaxe."
+
+      - name: MariaDB (o mesmo motor do XAMPP)
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq mariadb-server mariadb-client
+          sudo systemctl start mariadb
+          # Palavra-passe de administração só para esta execução: gerada aqui, mascarada nos registos, nunca escrita no repositório.
+          SENHA="$(openssl rand -hex 24)"
+          echo "::add-mask::$SENHA"
+          sudo mariadb -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$SENHA'; FLUSH PRIVILEGES;"
+          echo "LUMINA_DB_ADMIN_PASS=$SENHA" >> "$GITHUB_ENV"
+
+      - name: Testes (base de dados nova, servidor PHP, php tests/run.php, detetor de segredos)
+        run: bash tests/ci/executar.sh

@@ -1,5 +1,7 @@
 # Lumina — PHP + MySQL + XAMPP
 
+[![CI](https://github.com/AllyssonM/Projeto-de-PAP---Gest-o-f-cil-/actions/workflows/ci.yml/badge.svg)](https://github.com/AllyssonM/Projeto-de-PAP---Gest-o-f-cil-/actions/workflows/ci.yml)
+
 Versão simples para a PAP. Usa PHP, MySQL, Apache, HTML, CSS e JavaScript puro.
 
 ## Versão unida (landing page + painel)
@@ -463,6 +465,7 @@ config/database.php        ligação PDO ao MySQL (sem palavras-passe: variávei
 bin/criar_utilizador_bd.php  cria o utilizador MySQL da aplicação (só SELECT, INSERT, UPDATE, DELETE)
 includes/env.php           variáveis de ambiente e ficheiros config/*.local.php
 health.php                 /health: verificação de saúde para monitores (includes/health.php tem a lógica)
+.github/workflows/ci.yml   testes automáticos no GitHub (tests/ci/executar.sh é o que corre lá)
 bin/backup_bd.php          cópia de segurança da base de dados (comprimida, verificada, cifra opcional, retenção)
 bin/restaurar_bd.php       restaurar uma cópia (por omissão para uma base nova)
 includes/backup_lib.php    nomes, retenção, cifra em fluxo, criação e restauro das cópias
@@ -708,6 +711,23 @@ Cartões reais (só demonstração: não há integração com um fornecedor de p
 - `php tests/secret_scan.php`: procura segredos escritos no código.
 - `tests/browser/`: testes de navegador com Playwright (ver o README dessa pasta).
 - `tests/apache/check_htaccess.py`: as regras do `.htaccess` num Apache real.
+
+### Testes automáticos no GitHub (CI)
+
+Em cada *push* e em cada Pull Request o GitHub corre `.github/workflows/ci.yml` numa máquina limpa (Ubuntu 24.04, PHP 8.3, MariaDB 10.11):
+
+1. verifica a sintaxe de **todos** os ficheiros PHP;
+2. instala uma base de dados **nova**, como o `instalar_base_dados.bat` (schema + migrações, pela mesma ordem). Isto apanha migrações que só funcionam numa base já «suja»;
+3. cria o utilizador `lumina_app` (só SELECT, INSERT, UPDATE e DELETE) e corre a aplicação com ele, como em produção;
+4. corre `php tests/run.php` e `php tests/secret_scan.php`.
+
+O resultado aparece no separador **Actions** do GitHub e em cada Pull Request. **Não usa nenhum segredo do GitHub**: a palavra-passe de administração da base de dados de teste é gerada em cada execução, fica mascarada nos registos e desaparece com a máquina. As ferramentas do GitHub (`actions/checkout`, `shivammathur/setup-php`) estão fixadas por código de commit e o token do GitHub só pode ler o código.
+
+Para repetir o CI na sua máquina, com um MariaDB **vazio** e local: `CI=true LUMINA_DB_ADMIN_PASS=... bash tests/ci/executar.sh`. O script recusa-se a correr sem `CI=true`, contra um servidor que não seja local ou se a base `gestao_facil` já tiver tabelas (nunca apaga nada) e cria `config/database.local.php`.
+
+**Ainda não corre no CI:** os testes de navegador (`tests/browser`, Playwright) e o teste do `.htaccess` num Apache real.
+
+**Recomendado (só o dono do repositório pode):** em *Settings → Branches*, proteger o `main` exigindo que o teste «CI / PHP 8.3 + MariaDB» passe antes de juntar um Pull Request.
 
 ## Créditos
 
