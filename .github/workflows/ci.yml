@@ -1,11 +1,11 @@
 # =========================================================================
 # TESTES AUTOMÁTICOS NO GITHUB  (.github/workflows/ci.yml)
 # -------------------------------------------------------------------------
-# Corre em cada push e em cada Pull Request: sintaxe de todo o PHP, base de dados nova (schema + migrações), a suite php tests/run.php
-# e o detetor de segredos. Não precisa de NENHUM segredo do GitHub: a palavra-passe da base de dados de teste é gerada em cada execução,
+# Corre em cada push e em cada Pull Request: sintaxe de todo o PHP, base de dados nova (schema + migrações), a suite php tests/run.php,
+# o detetor de segredos e as regras do .htaccess num Apache real. Não precisa de NENHUM segredo do GitHub: a palavra-passe da base de dados de teste é gerada em cada execução,
 # fica mascarada nos registos e desaparece com a máquina. Nunca escreva aqui chaves, palavras-passe ou tokens.
 #
-# NÃO corre (ainda): os testes de navegador (tests/browser, Playwright) e o teste das regras do .htaccess num Apache real.
+# NÃO corre (ainda): os testes de navegador (tests/browser, Playwright). O teste das regras do .htaccess corre num Apache real (passo 5/5).
 # =========================================================================
 name: CI
 
@@ -71,5 +71,13 @@ jobs:
           sudo mariadb -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$SENHA'; FLUSH PRIVILEGES;"
           echo "LUMINA_DB_ADMIN_PASS=$SENHA" >> "$GITHUB_ENV"
 
-      - name: Testes (base de dados nova, servidor PHP, php tests/run.php, detetor de segredos)
+      # Apache + módulo PHP só para o teste das regras do .htaccess (corre num Apache privado, em portas altas, sem tocar no do sistema).
+      - name: Apache com PHP (para testar o .htaccess)
+        run: |
+          sudo apt-get install -y -qq apache2 libapache2-mod-php8.3
+          sudo systemctl stop apache2 || true
+
+      - name: Testes (base de dados nova, servidor PHP, php tests/run.php, detetor de segredos, Apache real)
+        env:
+          LUMINA_CI_APACHE: '1'
         run: bash tests/ci/executar.sh

@@ -41,6 +41,22 @@ Header always set X-Content-Type-Options "nosniff"
 Header always set Referrer-Policy "strict-origin-when-cross-origin"
 # HSTS só quando a ligação é segura (um ano)
 Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on'"
+
+# Nenhum outro site pode pôr o Lumina dentro de uma moldura (clickjacking). X-Frame-Options é para navegadores antigos; frame-ancestors é o moderno.
+Header always set X-Frame-Options "SAMEORIGIN"
+# CSP APLICADA (bloqueia mesmo): só as regras que não mexem em scripts nem estilos, por isso não alteram o aspeto nem o funcionamento.
+#   base-uri e form-action: um HTML injetado não consegue redirecionar o site nem enviar formulários para fora; object-src: sem plugins.
+Header always set Content-Security-Policy "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
+# CSP SÓ DE RELATÓRIO (não bloqueia nada: o navegador apenas regista no console o que esta política bloquearia). É a meta realista para, mais tarde,
+# impedir scripts que não sejam do próprio site (a defesa forte contra XSS). O sha256 é o do pequeno script do tema (<head>), igual em todas as páginas;
+# um teste confirma que continua certo. Estilos inline continuam permitidos (há ~130 no site). Ver docs/SEGURANCA_CABECALHOS.md antes de a aplicar.
+Header always set Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'sha256-fkY80esjeISkkJNjdyhCBfciBlAHADoitzbzsD3ttec='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com; media-src 'self'; worker-src 'self'; manifest-src 'self'; frame-src 'none'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
+# Funcionalidades do navegador que o Lumina não usa ficam desligadas (a localização serve só para o tempo no painel).
+Header always set Permissions-Policy "camera=(), microphone=(), payment=(), usb=(), serial=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), display-capture=(), geolocation=(self)"
+Header always set X-Permitted-Cross-Domain-Policies "none"
+# Não anunciar a versão do PHP. O PHP põe o X-Powered-By na tabela das respostas normais, que só o "unset" simples apaga ("always unset" não chega); os dois cobrem tudo.
+Header unset X-Powered-By
+Header always unset X-Powered-By
 </IfModule>
 
 # Compressão (texto) e cache do navegador. Imagens: 30 dias. CSS/JS: 1 dia (mudam mais; o service worker também os atualiza).

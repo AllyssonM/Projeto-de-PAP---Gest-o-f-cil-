@@ -8,7 +8,8 @@
 #   1. instala a base de dados como o instalar_base_dados.bat (database/gestao_facil.sql + migrações, pela mesma ordem);
 #   2. cria o utilizador lumina_app (só SELECT, INSERT, UPDATE, DELETE) e corre tudo com ele, como em produção;
 #   3. arranca o servidor PHP e espera que o /health diga "ok";
-#   4. corre php tests/run.php e o detetor de segredos (tests/secret_scan.php).
+#   4. corre php tests/run.php e o detetor de segredos (tests/secret_scan.php);
+#   5. arranca um Apache de teste e corre tests/apache/check_htaccess.py (regras do .htaccess, cabeçalhos de segurança).
 #
 # SEGURANÇA (o script cria e escreve numa base de dados, por isso recusa-se a correr onde pode fazer estragos):
 #   - só corre com CI=true (o GitHub Actions define-o; na sua máquina tem de o escrever de propósito);
@@ -35,7 +36,7 @@ CLIENT="$(command -v mariadb || command -v mysql || true)"
 [ -n "$CLIENT" ] || falhar "falta o cliente mariadb/mysql."
 sql() { "$CLIENT" --protocol=tcp -h "$HOST" -P "$PORT" -u "$ADMIN" --default-character-set=utf8mb4 "$@"; }
 
-echo "== 1/4 Base de dados =="
+echo "== 1/5 Base de dados =="
 sql -e "SELECT 1" >/dev/null 2>&1 || falhar "não consegui ligar ao servidor de base de dados em $HOST:$PORT (utilizador $ADMIN)."
 EXISTENTES="$(sql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'gestao_facil'")"
 [ "$EXISTENTES" = "0" ] || falhar "a base gestao_facil já tem $EXISTENTES tabelas: este script só corre numa base vazia."
@@ -46,12 +47,15 @@ for ficheiro in $(printf '%s\n' database/migracao_v*.sql | LC_ALL=C sort); do
 done
 echo "  tabelas: $(sql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'gestao_facil'"); migrações registadas: $(sql -N -e 'SELECT COUNT(*) FROM gestao_facil.schema_migrations')"
 
-echo "== 2/4 Utilizador da aplicação (menor privilégio) =="
+echo "== 2/5 Utilizador da aplicação (menor privilégio) =="
 [ ! -e config/database.local.php ] || falhar "config/database.local.php já existe."
 php bin/criar_utilizador_bd.php
 
-echo "== 3/4 Servidor PHP =="
+echo "== 3/5 Servidor PHP =="
 APP_PORT="${LUMINA_CI_PORT:-8086}"
+# A suite regista dezenas de contas e faz muitos logins a partir do MESMO IP: nestes âmbitos o servidor de testes tem limites folgados.
+# O limite da API (por utilizador) fica ao valor real, para provar que o uso normal não o atinge. (Os testes do próprio limite usam servidores à parte.)
+export LUMINA_RATE_AUTH_REGISTER=100000/3600 LUMINA_RATE_AUTH_LOGIN=100000/600 LUMINA_RATE_AUTH_FORGOT=100000/3600 LUMINA_RATE_AUTH_FORGOT_EMAIL=100000/3600 LUMINA_RATE_AUTH_TOKEN=100000/3600
 LOG="$(mktemp)"
 php -S "127.0.0.1:$APP_PORT" -t . router.php >"$LOG" 2>&1 &
 SERVIDOR=$!
@@ -63,12 +67,29 @@ done
 curl -fsS "http://127.0.0.1:$APP_PORT/health" || { echo; echo "O /health não ficou ok. Registo do servidor:"; tail -n 40 "$LOG"; exit 1; }
 echo
 
-echo "== 4/4 Testes =="
+echo "== 4/5 Testes =="
 RC=0
 SAIDA="$(mktemp)"
 trap 'kill "$SERVIDOR" 2>/dev/null || true; rm -f "$LOG" "$SAIDA"' EXIT
 LUMINA_URL="http://127.0.0.1:$APP_PORT/" php tests/run.php 2>&1 | tee "$SAIDA" || RC=$?
 php tests/secret_scan.php || RC=$?
+
+# 5/5: as regras do .htaccess e os cabeçalhos de segurança num Apache a sério (o servidor do PHP ignora o .htaccess).
+# LUMINA_CI_APACHE=1 (o CI define-o): obrigatório, falha se o Apache não estiver instalado. Sem isso, corre se existir e salta com aviso se não.
+echo "== 5/5 Apache real (.htaccess) =="
+if command -v apache2 >/dev/null 2>&1 && [ -n "$(find /usr/lib/apache2/modules -maxdepth 1 -name 'libphp*.so' 2>/dev/null | head -n 1)" ]; then
+    export LUMINA_APACHE_RUN="${RUNNER_TEMP:-/tmp}/lumina-apache"
+    if bash tests/apache/iniciar_apache.sh start; then
+        python3 tests/apache/check_htaccess.py || RC=$?
+    else
+        RC=1
+    fi
+    bash tests/apache/iniciar_apache.sh stop || true
+elif [ "${LUMINA_CI_APACHE:-}" = "1" ]; then
+    echo "ERRO: LUMINA_CI_APACHE=1 mas o Apache com PHP (apache2 + libapache2-mod-php) não está instalado."; RC=1
+else
+    echo "(saltado: Apache com PHP não instalado; ver tests/apache/iniciar_apache.sh)"
+fi
 
 # No GitHub, mostra o resultado em destaque (anotação + resumo do trabalho), sem ser preciso abrir o registo completo.
 RESUMO="$(grep -E '^Passaram: ' "$SAIDA" | tail -n 1 || true)"
