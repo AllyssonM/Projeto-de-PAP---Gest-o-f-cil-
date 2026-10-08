@@ -10,3 +10,10 @@ storage/logs/*
 __pycache__/
 *.pyc
 node_modules/
+
+# Cópias de segurança da base de dados (têm dados pessoais): nunca no repositório
+*.sql.gz
+*.sql.gz.enc
+*.sql.gz.parcial
+*.sql.gz.sha256
+storage/backup-status.json

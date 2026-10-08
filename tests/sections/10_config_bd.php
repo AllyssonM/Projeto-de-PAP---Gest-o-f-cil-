@@ -131,6 +131,16 @@ section('bin/criar_utilizador_bd.php: utilizador só com SELECT/INSERT/UPDATE/DE
         check('nome de utilizador com SQL é recusado antes de tocar na base de dados', $rc4 === 1 && (int)$admin->query("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = '$base'")->fetchColumn() === 1, $err4);
         [, , $rc5] = php_run(['bin/criar_utilizador_bd.php', '--utilizador=root', "--ficheiro=$file.y"], $adminEnv);
         check('não aceita "root" como utilizador da aplicação', $rc5 === 1);
+        // perfil "backup": só leitura, e mantém o que o utilizador já pôs no ficheiro (pasta, frase-passe)
+        $bkFile = $file . '.backup.php'; $bkUser = 'lumina_teste_bk';
+        file_put_contents($bkFile, "<?php return ['dir' => '/var/backups/lumina', 'passphrase' => 'frase-do-utilizador-123'];");
+        [$o6, $e6, $rc6] = php_run(['bin/criar_utilizador_bd.php', '--para=backup', "--base=$base", "--utilizador=$bkUser", "--ficheiro=$bkFile"], $adminEnv);
+        $bk = $rc6 === 0 ? (array)require $bkFile : [];
+        check('--para=backup cria um utilizador de cópias e guarda-o no ficheiro, sem apagar a pasta e a frase-passe já lá escritas', $rc6 === 0 && ($bk['user'] ?? '') === $bkUser && strlen((string)($bk['pass'] ?? '')) >= 32 && ($bk['dir'] ?? '') === '/var/backups/lumina' && ($bk['passphrase'] ?? '') === 'frase-do-utilizador-123', $e6 . $o6);
+        $bkp = $connect($bkUser, (string)($bk['pass'] ?? ''));
+        check('o utilizador de cópias lê mas NÃO escreve', (int)$bkp->query('SELECT COUNT(*) FROM users')->fetchColumn() === 1 && !$can($bkp, 'INSERT INTO users VALUES (9)') && !$can($bkp, 'DELETE FROM users WHERE 1 = 0') && !$can($bkp, 'CREATE TABLE t2 (id INT)'));
+        foreach (['localhost', '127.0.0.1'] as $h) { $admin->exec("DROP USER IF EXISTS '$bkUser'@'$h'"); }
+        @unlink($bkFile);
     } finally {
         $cleanup();
     }
@@ -157,9 +167,11 @@ section('Segredos: o repositório não tem chaves, palavras-passe nem tokens', f
     file_put_contents($dir . '/config/c.php', "<?php\nreturn ['password' => getenv('X') ?: '', 'api_key' => 'TROCA_ESTA_CHAVE_AQUI', 'token' => \$_SESSION['t']];\n");
     file_put_contents($dir . '/config/database.local.php', '<?php return [];');
     file_put_contents($dir . '/config/app_key.php', '<?php return "x";');
+    file_put_contents($dir . '/lumina_gestao_facil_2026-10-08_031509.sql.gz', 'x');                                  // uma cópia de segurança esquecida no projeto
+    file_put_contents($dir . '/schema.sql', 'CREATE TABLE t (id INT);');                                              // SQL de estrutura é legítimo
     $f = secret_scan($dir);
     $names = array_map(fn($r) => $r['file'], $f); sort($names);
-    check('o verificador apanha o token, a palavra-passe e os ficheiros proibidos (e só esses)', $names === ['config/app_key.php', 'config/b.php', 'config/database.local.php', 'includes/a.php'], json_encode($names));
+    check('o verificador apanha o token, a palavra-passe, as cópias de segurança e os ficheiros proibidos (e só esses)', $names === ['config/app_key.php', 'config/b.php', 'config/database.local.php', 'includes/a.php', 'lumina_gestao_facil_2026-10-08_031509.sql.gz'], json_encode($names));
     check('o resultado nunca contém o valor do segredo', !str_contains(json_encode($f), $token) && !str_contains(json_encode($f), $senha));
-    array_map('unlink', array_merge(glob($dir . '/config/*.php'), glob($dir . '/includes/*.php'))); rmdir($dir . '/config'); rmdir($dir . '/includes'); rmdir($dir);
+    array_map('unlink', array_merge(glob($dir . '/config/*.php'), glob($dir . '/includes/*.php'), glob($dir . '/*.*'))); rmdir($dir . '/config'); rmdir($dir . '/includes'); rmdir($dir);
 });

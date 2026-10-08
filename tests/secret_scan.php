@@ -3,7 +3,7 @@
    PROCURA DE SEGREDOS NO CÓDIGO  (tests/secret_scan.php)
    -------------------------------------------------------------------------
    Regra do Lumina: chaves, palavras-passe e tokens NUNCA ficam no código nem no GitHub. Este verificador procura:
-     1. ficheiros que nunca devem estar no repositório (config/*.local.php, config/app_key.php, .env, chaves privadas);
+     1. ficheiros que nunca devem estar no repositório (config/*.local.php, config/app_key.php, .env, chaves privadas, cópias .sql.gz);
      2. formatos conhecidos de chaves (GitHub, Google, Meta, Anthropic/OpenAI, AWS, Slack, chaves privadas PEM);
      3. palavras-passe/segredos escritos à mão em ficheiros de código de produção (config/, includes/, api/, raiz).
    NUNCA imprime o valor encontrado, só o ficheiro, a linha e a regra (para não espalhar o segredo pelos registos).
@@ -37,7 +37,7 @@ function secret_scan(string $root, ?array $files = null): array
     $root = rtrim(str_replace('\\', '/', $root), '/');
     $files ??= secret_scan_files($root);
     $out = [];
-    $forbidden = '#(^|/)(config/[^/]+\.local\.php|config/app_key\.php|\.env(\..+)?|.*\.pem|id_rsa|id_ed25519)$#';
+    $forbidden = '#(^|/)(config/[^/]+\.local\.php|config/app_key\.php|\.env(\..+)?|.*\.pem|id_rsa|id_ed25519|.*\.sql\.gz(\.enc|\.parcial|\.sha256)?|storage/backup-status\.json)$#';
     $known = [
         'chave privada PEM'       => '/-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY/',
         'token do GitHub'         => '/\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}\b|\bgithub_pat_[A-Za-z0-9_]{40,}\b/',

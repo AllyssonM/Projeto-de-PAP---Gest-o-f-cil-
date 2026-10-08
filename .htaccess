@@ -1,6 +1,6 @@
 # Sem listagem de pastas e sem acesso a ficheiros internos do projeto
 Options -Indexes
-<FilesMatch "\.(sql|bat|md|log|sh|env|ini|bak)$">
+<FilesMatch "\.(sql|bat|md|log|sh|env|ini|bak|gz|enc|sha256|parcial|zip|7z|tar|dump)$">
     Require all denied
 </FilesMatch>
 

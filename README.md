@@ -352,6 +352,62 @@ Chaves e palavras-passe vão para **variáveis de ambiente** ou para um ficheiro
 
 `php tests/secret_scan.php` procura chaves, tokens e palavras-passe escritos no código (e ficheiros que nunca devem ir para o repositório). Corre também no GitHub Actions. Se alguma vez uma chave for para o GitHub, **roda-a de imediato** (apagar o ficheiro não chega: fica no histórico).
 
+## Cópias de segurança (backups) da base de dados
+
+`bin/backup_bd.php` faz uma cópia **completa, comprimida, verificada e (opcionalmente) cifrada**; `bin/restaurar_bd.php` repõe-a. Estado: **implementado e testado em Linux** (MariaDB 10.11) com testes automáticos (nomes, retenção, cifra, criação, restauro e falhas); a parte do Windows (`backup_bd.bat`, Agendador de Tarefas) **ainda não foi testada num Windows real**.
+
+**Configurar (uma vez):**
+
+1. Utilizador de cópias, **só de leitura** (SELECT e SHOW VIEW): `php bin/criar_utilizador_bd.php --para=backup` (guarda-o em `config/backup.local.php`).
+2. No mesmo ficheiro `config/backup.local.php` (ignorado pelo Git) acrescente a **pasta de destino** e a **frase-passe**:
+
+```php
+<?php
+return [
+    'user' => '...', 'pass' => '...',                      // escritos pelo passo 1
+    'dir'        => '/var/backups/lumina',                 // FORA da pasta do site (no XAMPP: C:\lumina-backups)
+    'passphrase' => 'uma frase longa que só tu sabes',     // ≥ 16 caracteres; sem ela as cópias NÃO ficam cifradas
+    // 'daily' => 7, 'weekly' => 4, 'monthly' => 6,        // retenção (valores por omissão)
+];
+```
+
+   Em alternativa, variáveis de ambiente: `LUMINA_BACKUP_DIR`, `LUMINA_BACKUP_PASSPHRASE`, `LUMINA_BACKUP_DB_USER`, `LUMINA_BACKUP_DB_PASS`, `LUMINA_BACKUP_KEEP_DAILY|WEEKLY|MONTHLY`.
+3. Faça uma cópia agora: `php bin/backup_bd.php` (XAMPP: duplo clique em `backup_bd.bat`, depois de editar a pasta de destino nas primeiras linhas).
+4. **Agende-a** (uma vez por dia, de madrugada):
+   - Linux / Raspberry Pi (como o utilizador que lê `config/backup.local.php`, normalmente `www-data`):
+     `sudo -u www-data crontab -e` e acrescentar  
+     `0 3 * * * cd /var/www/html && /usr/bin/php bin/backup_bd.php >> /var/log/lumina-backup.log 2>&1`
+   - Windows (XAMPP): `schtasks /Create /SC DAILY /ST 03:00 /TN "Lumina - copia de seguranca" /TR "\"C:\xampp\htdocs\lumina\backup_bd.bat\" auto"`
+
+**O que cada cópia garante:**
+
+| Garantia | Como |
+|---|---|
+| Nome identificável | `lumina_<base>_AAAA-MM-DD_HHMMSS.sql.gz` (`.enc` se cifrada), com a hora da aplicação |
+| Sem segredos no comando | As credenciais vão para um ficheiro temporário 0600 (`--defaults-extra-file`), apagado no fim; nunca para a linha de comandos (visível com `ps`) |
+| Cifra opcional | libsodium: Argon2id + XChaCha20-Poly1305 em blocos, com deteção de adulteração, truncagem e blocos trocados |
+| Íntegra | Relida e verificada antes de ser guardada (fim do ficheiro, número de tabelas); soma SHA-256 ao lado (`.sha256`) |
+| Atómica | Escreve num `.parcial` e só o renomeia se estiver completa; uma falha nunca deixa uma «cópia» a meio |
+| Privada | Pasta 0700 e ficheiros 0600; recusa pastas dentro do Lumina; `.gitignore`, `.htaccess` e o verificador de segredos impedem que vão para o GitHub ou para a web |
+| Retenção | Guarda a mais recente + a mais nova de cada um dos últimos 7 dias, 4 semanas e 6 meses; apaga o resto **só depois de uma cópia nova correr bem**, e só ficheiros com o nome das nossas cópias |
+| Sem duplicados | Um bloqueio impede duas cópias ao mesmo tempo; nunca sobrescreve um ficheiro existente; verifica o espaço livre |
+
+**Restaurar** (`php bin/restaurar_bd.php FICHEIRO`):
+
+- Por omissão restaura para uma base **nova** (`gestao_facil_restauro_AAAAMMDD_HHMMSS`): a base em uso não é tocada. Confira os dados e depois aponte o Lumina para ela (`LUMINA_DB_NAME`).
+- Antes de tocar em qualquer base, a cópia é verificada por inteiro (SHA-256 e leitura completa); se estiver corrompida ou adulterada, **nada é alterado**.
+- Para **substituir** uma base existente: `--base=NOME --sobrescrever --confirmo=NOME`. É feita antes uma cópia dessa base (etiqueta `antes-do-restauro`, nunca apagada pela retenção).
+- Cópias cifradas precisam da mesma frase-passe (`LUMINA_BACKUP_PASSPHRASE` ou `config/backup.local.php`).
+- Precisa de uma conta de administração do MySQL (`LUMINA_DB_ADMIN_USER` / `LUMINA_DB_ADMIN_PASS`; no XAMPP, `root` sem palavra-passe).
+
+**Avisos importantes:**
+
+- **Teste o restauro** (por exemplo uma vez por mês, ou com `php bin/backup_bd.php --verificar-restauro`, que repõe a cópia numa base temporária). Uma cópia que nunca foi restaurada é só uma esperança.
+- **Se perder a frase-passe, perde as cópias cifradas.** Guarde-a num sítio seguro e separado (gestor de palavras-passe).
+- O mesmo disco/cartão SD não é um backup: copie a pasta de destino para **outro sítio** (disco externo, outro computador). Se for para a nuvem, só **cifradas**. O envio automático para o Google Drive **ainda não está implementado**.
+- As cópias têm dados pessoais (clientes, funcionários) e as palavras-passe em hash: tratam-se como a própria base de dados. **RGPD:** um dado apagado no Lumina continua nas cópias até elas expirarem (até 6 meses com a retenção por omissão). A política de privacidade deve dizê-lo (ver `docs/RGPD_INTEGRACOES.md`).
+- Um aviso automático quando uma cópia falha **ainda não está implementado**: veja o código de saída (0 = bem, 1 = falhou) e o log do `cron`.
+
 ## Primeiro acesso
 
 Clique em **Criar conta**. O sistema guarda a palavra-passe usando `password_hash()` e cria uma sessão PHP.
@@ -377,6 +433,10 @@ dashboard.php              painel (requer sessão)
 config/database.php        ligação PDO ao MySQL (sem palavras-passe: variáveis LUMINA_DB_* ou config/database.local.php)
 bin/criar_utilizador_bd.php  cria o utilizador MySQL da aplicação (só SELECT, INSERT, UPDATE, DELETE)
 includes/env.php           variáveis de ambiente e ficheiros config/*.local.php
+bin/backup_bd.php          cópia de segurança da base de dados (comprimida, verificada, cifra opcional, retenção)
+bin/restaurar_bd.php       restaurar uma cópia (por omissão para uma base nova)
+includes/backup_lib.php    nomes, retenção, cifra em fluxo, criação e restauro das cópias
+backup_bd.bat / criar_utilizador_bd.bat   atalhos para Windows (XAMPP)
 config/app.php             fuso horário do programa
 includes/auth.php          sessão, segurança e respostas JSON
 includes/calendar.php      validação, gravação dos eventos e reuniões próximas
