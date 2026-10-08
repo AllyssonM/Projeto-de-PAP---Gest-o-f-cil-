@@ -180,6 +180,17 @@ Estado: **implementado e testado na API** (86 testes). **Não está ligado ao ec
 - **Anular:** `action=undo` + `batch` (só o responsável). Apaga só os produtos que continuam como foram importados; os editados, com vendas ou com ajustes de estoque ficam, e a resposta diz quais e porquê.
 - Quem tem a permissão do Estoque importa/exporta; limites de pedidos `import` e `export`; ficheiro até 1 MB e 2000 linhas. Migração `database/migracao_v18_importar_produtos.sql` (2 colunas opcionais em `products`, não altera dados). Lógica: `includes/product_import.php`.
 
+## Alertas de estoque baixo por email (v19) — comando para o agendador, sem botão no ecrã
+
+Estado: **implementado e testado** com um «sendmail» falso (nada sai da máquina). **Não testado** com um servidor SMTP real nem no Agendador de Tarefas do Windows. O interruptor no ecrã (preferências da conta) **não existe**: mexeria no aspeto da página e aguarda autorização; por agora liga-se pelo comando.
+
+- `php bin/alertas_estoque.php --ativar=dono@email` (e `--desativar=`) · `php bin/alertas_estoque.php --simular` (mostra quantos avisaria, sem enviar) · `php bin/alertas_estoque.php` (envia; agendar 1× por dia, ex.: cron `0 8 * * *`; sem palavras-passe na linha).
+- **Quem recebe:** só o **dono** do negócio, com o email confirmado e que ativou o aviso (desligado por omissão). Funcionários e clientes nunca recebem.
+- **O quê:** produtos com estoque mínimo definido (> 0) e quantidade ≤ mínimo (baixo, ou sem estoque). Arquivados não contam. O email leva só nomes, marcas e quantidades.
+- **Sem repetir:** só avisa de novo se o produto piorar (baixo → sem estoque) ou se for reposto e voltar a baixar (`stock_alert_state`, migração v19).
+- **Honesto:** com o email em modo de teste (driver `log`) **não envia nem grava nada** e diz-o; o aviso fica pendente até o SMTP estar configurado (`config/mail.local.php` ou `LUMINA_SMTP_*`).
+- **Canais:** `includes/alert_channels.php` é o único sítio por onde saem os avisos; só existe o canal `email`. Acrescentar outro (ex.: Telegram) é acrescentar uma função, sem mexer em quem avisa. O aviso de cópia de segurança falhada pode usar o mesmo canal (por ligar).
+
 ## Lumina (assistente de IA — chat sobre os teus dados)
 
 No canto inferior direito do painel há um botão pequeno (✦). Abre um chat onde se faz perguntas em linguagem natural sobre os dados do negócio: *"Quanto temos para receber?"*, *"E quanto disso está atrasado?"*, *"Quanto devemos a cada fornecedor?"*, *"Produtos com stock baixo"*, *"Total de vendas deste mês"*. A conversa mantém o contexto, responde com valores formatados, listas e tabelas, mostra a **fonte** dos dados e diz com clareza quando não há dados suficientes (não inventa).
@@ -292,6 +303,7 @@ Alternativa com o phpMyAdmin (`http://localhost/phpmyadmin` > **Importar**): imp
 | `migracao_v12_orcamentos_e_importacao.sql` | Orçamentos mensais por categoria e identificador de importação (para anular uma importação de CSV) |
 | `migracao_v13_funcionarios.sql` | Tarefas, metas, mensagens, observações do líder, avisos, registo de entradas e a pausa dos funcionários |
 | `migracao_v14_meta_ads.sql` | Ligação à Meta Ads (token cifrado) e cópia dos dados mais recentes |
+| `migracao_v19_alertas_estoque.sql` | Tabela `stock_alert_state` (último nível avisado por produto, para os alertas de estoque não se repetirem) |
 | `migracao_v18_importar_produtos.sql` | Colunas opcionais `import_batch` e `import_sig` em `products` (anular uma importação CSV com segurança); não altera dados |
 | `migracao_v17_limite_pedidos.sql` | Tabela `rate_limits` (contadores do limite de pedidos; guarda só códigos de dispersão, nunca IP nem email) |
 | `migracao_v16_variacoes_vendas.sql` | Variações de produto (tamanho/cor), marca, cabeçalho das vendas, retrato do produto na venda, estado (concluída/anulada) e ligação dos movimentos de estoque |
@@ -477,6 +489,7 @@ config/database.php        ligação PDO ao MySQL (sem palavras-passe: variávei
 bin/criar_utilizador_bd.php  cria o utilizador MySQL da aplicação (só SELECT, INSERT, UPDATE, DELETE)
 includes/env.php           variáveis de ambiente e ficheiros config/*.local.php
 health.php                 /health: verificação de saúde para monitores (includes/health.php tem a lógica)
+bin/alertas_estoque.php    avisos de estoque baixo por email (includes/stock_alerts.php, includes/alert_channels.php)
 includes/product_import.php  importar/exportar produtos por CSV (api/product_import.php)
 includes/rate_limit.php    limite de pedidos (429); includes/client_ip.php: IP do cliente atrás de proxies de confiança
 .github/workflows/ci.yml   testes automáticos no GitHub (tests/ci/executar.sh é o que corre lá)

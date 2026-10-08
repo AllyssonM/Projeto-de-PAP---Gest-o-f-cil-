@@ -24,7 +24,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/mailer.php';
 
 /** Migrações que têm de estar aplicadas (v10 regista também v1–v9). Ao criar uma migração nova, acrescente-a aqui: um teste confirma que a lista bate certo com database/. */
-const HEALTH_REQUIRED_MIGRATIONS = ['v10', 'v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18'];
+const HEALTH_REQUIRED_MIGRATIONS = ['v10', 'v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18', 'v19'];
 /** Migrações antigas que se aplicavam sem se registarem em schema_migrations: se esta tabela existir, a migração conta como aplicada. */
 const HEALTH_UNREGISTERED_PROBES = ['v14' => 'meta_connections'];
 /** Sem estas extensões do PHP o Lumina não funciona bem; as recomendadas têm alternativa no código (cURL → streams; GD → ficheiro como veio) ou só servem às cópias de segurança (zlib). */

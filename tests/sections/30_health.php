@@ -21,11 +21,11 @@ section('Saúde (/health): funções puras', function () {
     check('down tem prioridade sobre degraded', health_overall(['database' => 'fail', 'backup' => 'stale']) === 'down');
 
     // migrações
-    check('todas registadas → nada em falta', health_pending_migrations(['v1', 'v10', 'v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18'], []) === []);
-    check('v14 sem registo mas com a tabela meta_connections → conta como aplicada (instalações antigas)', health_pending_migrations(['v10', 'v11', 'v12', 'v13', 'v16', 'v17', 'v18'], ['meta_connections']) === []);
-    check('v14 sem registo e sem a tabela → em falta', health_pending_migrations(['v10', 'v11', 'v12', 'v13', 'v16', 'v17', 'v18'], ['users']) === ['v14']);
-    check('só a v10 → faltam todas as seguintes, por ordem', health_pending_migrations(['v10'], []) === ['v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18']);
-    check('a tabela de uma migração SEM sonda não a dá por aplicada', health_pending_migrations(['v10'], ['sale_orders', 'meta_connections']) === ['v11', 'v12', 'v13', 'v16', 'v17', 'v18']);
+    check('todas registadas → nada em falta', health_pending_migrations(['v1', 'v10', 'v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18', 'v19'], []) === []);
+    check('v14 sem registo mas com a tabela meta_connections → conta como aplicada (instalações antigas)', health_pending_migrations(['v10', 'v11', 'v12', 'v13', 'v16', 'v17', 'v18', 'v19'], ['meta_connections']) === []);
+    check('v14 sem registo e sem a tabela → em falta', health_pending_migrations(['v10', 'v11', 'v12', 'v13', 'v16', 'v17', 'v18', 'v19'], ['users']) === ['v14']);
+    check('só a v10 → faltam todas as seguintes, por ordem', health_pending_migrations(['v10'], []) === ['v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18', 'v19']);
+    check('a tabela de uma migração SEM sonda não a dá por aplicada', health_pending_migrations(['v10'], ['sale_orders', 'meta_connections']) === ['v11', 'v12', 'v13', 'v16', 'v17', 'v18', 'v19']);
 
     // cópias de segurança
     $now = new DateTimeImmutable('2026-10-08 12:00:00', new DateTimeZone('Europe/Lisbon'));
@@ -130,11 +130,11 @@ section('Saúde (/health): migrações em falta numa base de dados à parte', fu
         $pdo = new PDO('mysql:host=' . (getenv('LUMINA_DB_ADMIN_HOST') ?: DB_HOST) . ';port=' . (getenv('LUMINA_DB_ADMIN_PORT') ?: DB_PORT) . ";dbname=$base;charset=utf8mb4",
             getenv('LUMINA_DB_ADMIN_USER') ?: 'root', getenv('LUMINA_DB_ADMIN_PASS') ?: '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
         $r = health_check_schema($pdo);
-        check('só até à v10 → fail com v11, v12, v13, v14, v16, v17 e v18 em falta', $r === ['status' => 'fail', 'pending' => ['v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18']], json_encode($r));
+        check('só até à v10 → fail com v11, v12, v13, v14, v16, v17, v18 e v19 em falta', $r === ['status' => 'fail', 'pending' => ['v11', 'v12', 'v13', 'v14', 'v16', 'v17', 'v18', 'v19']], json_encode($r));
         $admin->exec("CREATE TABLE `$base`.meta_connections (id INT)");
         $r = health_check_schema($pdo);
-        check('com a tabela meta_connections, a v14 já não falta (migração antiga sem registo)', $r['pending'] === ['v11', 'v12', 'v13', 'v16', 'v17', 'v18'], json_encode($r));
-        $admin->exec("INSERT INTO `$base`.schema_migrations (version) VALUES ('v11'),('v12'),('v13'),('v16'),('v17'),('v18')");
+        check('com a tabela meta_connections, a v14 já não falta (migração antiga sem registo)', $r['pending'] === ['v11', 'v12', 'v13', 'v16', 'v17', 'v18', 'v19'], json_encode($r));
+        $admin->exec("INSERT INTO `$base`.schema_migrations (version) VALUES ('v11'),('v12'),('v13'),('v16'),('v17'),('v18'),('v19')");
         check('com todas registadas → ok', health_check_schema($pdo) === ['status' => 'ok', 'pending' => []]);
 
         // Pedido web real contra esta base: vista pública não revela nada; a detalhada (com segredo) lista o que falta.
