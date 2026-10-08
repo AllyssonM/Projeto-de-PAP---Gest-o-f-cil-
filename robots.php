@@ -12,4 +12,5 @@ header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: public, max-age=3600');
 echo "User-agent: *\nAllow: /\n";
 foreach (['api', 'storage', 'config', 'includes', 'database', 'tests', 'legal', 'docs'] as $dir) echo "Disallow: /$dir/\n";
+echo "Disallow: /health\n";
 echo "\nSitemap: " . app_base_url() . "/sitemap.xml\n";

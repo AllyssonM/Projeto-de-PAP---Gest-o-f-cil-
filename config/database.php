@@ -129,6 +129,7 @@ function db(): PDO
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_TIMEOUT => 5,                 // segundos para ligar: com o MySQL parado/inalcançável, falha depressa em vez de pendurar o pedido
         ]);
         // O relógio do MySQL (NOW(), CURRENT_TIMESTAMP) passa a ser o da aplicação (config/app.php). Sem isto, se o servidor de base de dados
         // estiver noutro fuso, as horas escritas pelo PHP e pelo MySQL ficariam trocadas (ex.: uma entrada às 09:39 apareceria às 08:39).

@@ -349,8 +349,9 @@ Chaves e palavras-passe vão para **variáveis de ambiente** ou para um ficheiro
 | Meta Ads | `GF_META_APP_ID` `GF_META_APP_SECRET` | `config/meta.local.php` |
 | Google Calendar | `GF_GOOGLE_CLIENT_ID` `GF_GOOGLE_CLIENT_SECRET` | `config/google.local.php` |
 | Chave de cifra dos tokens | `GF_APP_KEY` | `config/app_key.php` (criada sozinha) |
+| Vista detalhada do `/health` | `LUMINA_HEALTH_TOKEN` | `config/health.local.php` (`<?php return ['token' => '...'];`) |
 
-`php tests/secret_scan.php` procura chaves, tokens e palavras-passe escritos no código (e ficheiros que nunca devem ir para o repositório). Corre também no GitHub Actions. Se alguma vez uma chave for para o GitHub, **roda-a de imediato** (apagar o ficheiro não chega: fica no histórico).
+`php tests/secret_scan.php` procura chaves, tokens e palavras-passe escritos no código (e ficheiros que nunca devem ir para o repositório). Se alguma vez uma chave for para o GitHub, **roda-a de imediato** (apagar o ficheiro não chega: fica no histórico).
 
 ## Cópias de segurança (backups) da base de dados
 
@@ -408,6 +409,34 @@ return [
 - As cópias têm dados pessoais (clientes, funcionários) e as palavras-passe em hash: tratam-se como a própria base de dados. **RGPD:** um dado apagado no Lumina continua nas cópias até elas expirarem (até 6 meses com a retenção por omissão). A política de privacidade deve dizê-lo (ver `docs/RGPD_INTEGRACOES.md`).
 - Um aviso automático quando uma cópia falha **ainda não está implementado**: veja o código de saída (0 = bem, 1 = falhou) e o log do `cron`.
 
+## Verificação de saúde (`/health`)
+
+Um endereço para monitores de disponibilidade (Uptime Kuma, UptimeRobot, um `cron` no Raspberry Pi...) saberem se o Lumina está vivo e se fala com a base de dados. Estado: **implementado e testado** com um servidor PHP real (base de dados parada, migrações em falta, segredo certo/errado, métodos, cabeçalhos). **Ainda não testado num Apache real**: a regra `RewriteRule ^health$ health.php` está no `.htaccess`; `/health.php` funciona sempre.
+
+**Resposta pública** (qualquer pessoa pode pedir). Não mostra versões, caminhos, nome da base de dados nem mensagens de erro:
+
+```json
+{"status":"ok","checks":{"app":"ok","database":"ok","storage":"ok"}}
+```
+
+| `status` | HTTP | Significa |
+|---|---|---|
+| `ok` | 200 | Tudo bem |
+| `degraded` | 200 | Funciona, mas algo precisa de atenção (ex.: a pasta `storage/` não aceita escrita) |
+| `down` | 503 | Não consegue falar com a base de dados (ou recusa arrancar: ver «Recusa automática» acima) |
+
+O motivo verdadeiro de uma falha fica **só** no log de erros do PHP. Aceita apenas GET e HEAD (o resto dá 405); não usa sessões, não escreve no disco nem na base de dados, não cria chaves e não envia e-mails. Cada pedido faz uma ligação e uma consulta leve à base de dados: se o expuser na Internet, ponha um limite de pedidos no servidor ou no proxy. A ligação à base de dados tem um tempo limite de 5 segundos; uma base de dados que aceita a ligação mas não responde só é apanhada pelo tempo limite do próprio monitor.
+
+**Vista detalhada** (opcional; **desligada** enquanto não definir um segredo). Gere um segredo com `php -r "echo bin2hex(random_bytes(24)), PHP_EOL;"` e guarde-o em `LUMINA_HEALTH_TOKEN` (ou em `config/health.local.php`; mínimo 16 carateres). O monitor envia-o no **cabeçalho** `X-Health-Token` (nunca no endereço, porque os endereços ficam nos registos dos servidores):
+
+```text
+curl -H "X-Health-Token: O_SEU_SEGREDO" https://o-seu-site.pt/health
+```
+
+Junta `schema` (migrações da base de dados em dia; lista as que faltam), `backup` (`ok` se a última cópia tem menos de 36 h, `stale` se é mais antiga, `none` se nunca houve), `disk` (`low` abaixo de 10 % livre, `critical` abaixo de 3 %), `crypto_key` (a chave de cifra existe e é válida; **não a cria**), `php_extensions` (as extensões obrigatórias estão carregadas) e o canal de e-mail (`log` quer dizer que **não** se enviam e-mails reais). Qualquer destas a falhar põe o estado em `degraded`. Um segredo errado recebe exatamente a resposta pública (não revela que a vista detalhada existe). Se o seu monitor não deixar enviar cabeçalhos, a vista pública chega para saber se está vivo.
+
+Ao criar uma migração nova, acrescente a versão a `HEALTH_REQUIRED_MIGRATIONS` em `includes/health.php` e faça a migração registar-se (`INSERT IGNORE INTO schema_migrations`): um teste falha se se esquecer.
+
 ## Primeiro acesso
 
 Clique em **Criar conta**. O sistema guarda a palavra-passe usando `password_hash()` e cria uma sessão PHP.
@@ -433,6 +462,7 @@ dashboard.php              painel (requer sessão)
 config/database.php        ligação PDO ao MySQL (sem palavras-passe: variáveis LUMINA_DB_* ou config/database.local.php)
 bin/criar_utilizador_bd.php  cria o utilizador MySQL da aplicação (só SELECT, INSERT, UPDATE, DELETE)
 includes/env.php           variáveis de ambiente e ficheiros config/*.local.php
+health.php                 /health: verificação de saúde para monitores (includes/health.php tem a lógica)
 bin/backup_bd.php          cópia de segurança da base de dados (comprimida, verificada, cifra opcional, retenção)
 bin/restaurar_bd.php       restaurar uma cópia (por omissão para uma base nova)
 includes/backup_lib.php    nomes, retenção, cifra em fluxo, criação e restauro das cópias

@@ -59,7 +59,8 @@ function secret_scan(string $root, ?array $files = null): array
         foreach (file($path, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
             $lineNo++;
             foreach ($known as $name => $re) { if (preg_match($re, $line)) { $out[] = ['file' => $rel, 'line' => $lineNo, 'rule' => $name]; } }
-            if ($prod && preg_match($assign, $line, $m) && !preg_match($placeholder, $m[2]) && !preg_match('/getenv|lumina_env|\$_|random_|password_hash/i', $line)) {
+            // (um valor como 'LUMINA_DB_PASS' é o NOME de uma variável de ambiente, não uma palavra-passe)
+            if ($prod && preg_match($assign, $line, $m) && !preg_match($placeholder, $m[2]) && !preg_match('/^(?:LUMINA|GF)_[A-Z0-9_]+$/', $m[2]) && !preg_match('/getenv|lumina_env|\$_|random_|password_hash/i', $line)) {
                 $out[] = ['file' => $rel, 'line' => $lineNo, 'rule' => 'palavra-passe/segredo escrito no código'];
             }
         }

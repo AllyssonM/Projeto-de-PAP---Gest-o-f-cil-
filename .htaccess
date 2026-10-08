@@ -23,6 +23,9 @@ RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [L,R=301]
 RewriteRule ^robots\.txt$ robots.php [L]
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 
+# 2b) /health: verificação de saúde para monitores (health.php). Resposta mínima; o detalhe só com o cabeçalho X-Health-Token.
+RewriteRule ^health$ health.php [L]
+
 # 3) Endereços limpos nas páginas públicas (sem .php). ESTA LISTA TEM DE SER IGUAL a SEO_PUBLIC_PAGES em includes/seo.php (há um teste que o confirma).
 #    Quem abrir o endereço antigo (.php) ou com barra no fim é levado ao endereço limpo (301), para o Google guardar um só.
 #    O destino constrói-se a partir do pedido original (THE_REQUEST): um alvo relativo aqui levaria o caminho do disco do servidor à frente.

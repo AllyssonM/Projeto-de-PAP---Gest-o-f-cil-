@@ -165,13 +165,14 @@ section('Segredos: o repositório não tem chaves, palavras-passe nem tokens', f
     file_put_contents($dir . '/includes/a.php', "<?php\n\$x = '$token';\n");
     file_put_contents($dir . '/config/b.php', "<?php\nreturn ['smtp_password' => '$senha'];\n");
     file_put_contents($dir . '/config/c.php', "<?php\nreturn ['password' => getenv('X') ?: '', 'api_key' => 'TROCA_ESTA_CHAVE_AQUI', 'token' => \$_SESSION['t']];\n");
+    file_put_contents($dir . '/includes/d.php', "<?php\nreturn ['pass' => 'LUMINA_BACKUP_DB_PASS', 'password' => 'GF_SMTP_PASSWORD'];\n");   // nomes de variáveis de ambiente: não são segredos
     file_put_contents($dir . '/config/database.local.php', '<?php return [];');
     file_put_contents($dir . '/config/app_key.php', '<?php return "x";');
     file_put_contents($dir . '/lumina_gestao_facil_2026-10-08_031509.sql.gz', 'x');                                  // uma cópia de segurança esquecida no projeto
     file_put_contents($dir . '/schema.sql', 'CREATE TABLE t (id INT);');                                              // SQL de estrutura é legítimo
     $f = secret_scan($dir);
     $names = array_map(fn($r) => $r['file'], $f); sort($names);
-    check('o verificador apanha o token, a palavra-passe, as cópias de segurança e os ficheiros proibidos (e só esses)', $names === ['config/app_key.php', 'config/b.php', 'config/database.local.php', 'includes/a.php', 'lumina_gestao_facil_2026-10-08_031509.sql.gz'], json_encode($names));
+    check('o verificador apanha o token, a palavra-passe, as cópias de segurança e os ficheiros proibidos (e só esses; nomes de variáveis de ambiente como LUMINA_DB_PASS não contam)', $names === ['config/app_key.php', 'config/b.php', 'config/database.local.php', 'includes/a.php', 'lumina_gestao_facil_2026-10-08_031509.sql.gz'], json_encode($names));
     check('o resultado nunca contém o valor do segredo', !str_contains(json_encode($f), $token) && !str_contains(json_encode($f), $senha));
     array_map('unlink', array_merge(glob($dir . '/config/*.php'), glob($dir . '/includes/*.php'), glob($dir . '/*.*'))); rmdir($dir . '/config'); rmdir($dir . '/includes'); rmdir($dir);
 });

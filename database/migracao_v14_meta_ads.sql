@@ -32,3 +32,6 @@ CREATE TABLE IF NOT EXISTS meta_snapshots (
     UNIQUE KEY uq_meta_snap (user_id, ad_account_id, date_preset),
     CONSTRAINT fk_meta_snap_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- Regista esta migração (as outras já o faziam; esta ficou de fora). Em instalações antigas, o /health reconhece-a pela tabela meta_connections.
+INSERT IGNORE INTO schema_migrations (version) VALUES ('v14');
