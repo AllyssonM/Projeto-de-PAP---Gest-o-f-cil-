@@ -170,6 +170,16 @@ Liga a conta de anúncios da Meta e mostra campanhas, conjuntos de anúncios e a
 - **Base de dados:** `database/migracao_v16_variacoes_vendas.sql` — segura de repetir, **não apaga dados**: cada produto existente fica com uma variação (tamanho e cor lidos de `attributes`, quantidade = estoque atual). O `instalar_base_dados.bat` aplica-a.
 - **Testes:** `tests/browser/stock_sales_ui.py` (API + ecrã: criação, validações, duplicados, edição, vendas válidas/acima do estoque, idempotência, 8 vendas em simultâneo com 3 em estoque, total automático/manual, anular/editar/apagar vendas, ranking, palavra-passe, nome ao lado da foto, ecrãs pequenos, consola sem erros).
 
+## Importar e exportar produtos por CSV (v18) — só API, ainda sem botões no ecrã
+
+Estado: **implementado e testado na API** (86 testes). **Não está ligado ao ecrã** do Estoque: os botões «Importar CSV» / «Exportar CSV» mudariam o aspeto da página e aguardam autorização.
+
+- `GET api/product_import.php?action=export` → CSV (UTF-8 com BOM, separador `;`, preços `12,50`), uma linha por variação; arquivados ficam de fora; células a começar por `= + - @` levam apóstrofo (o Excel não executa fórmulas).
+- `POST` com `action=preview` → mostra o que ia acontecer **sem gravar nada** (produtos novos, já existentes, linhas com erro e motivo, colunas sugeridas). `action=import` → cria os produtos novos, **tudo ou nada** numa só transação.
+- **Nunca sobrescreve:** um produto cujo nome+marca já exista fica como está (aparece como «já existe»). Linhas repetidas do mesmo produto juntam as variações (tamanho/cor). Preços/quantidades inválidos, tamanho+cor repetidos ou SKU repetido rejeitam esse produto com a linha e o motivo.
+- **Anular:** `action=undo` + `batch` (só o responsável). Apaga só os produtos que continuam como foram importados; os editados, com vendas ou com ajustes de estoque ficam, e a resposta diz quais e porquê.
+- Quem tem a permissão do Estoque importa/exporta; limites de pedidos `import` e `export`; ficheiro até 1 MB e 2000 linhas. Migração `database/migracao_v18_importar_produtos.sql` (2 colunas opcionais em `products`, não altera dados). Lógica: `includes/product_import.php`.
+
 ## Lumina (assistente de IA — chat sobre os teus dados)
 
 No canto inferior direito do painel há um botão pequeno (✦). Abre um chat onde se faz perguntas em linguagem natural sobre os dados do negócio: *"Quanto temos para receber?"*, *"E quanto disso está atrasado?"*, *"Quanto devemos a cada fornecedor?"*, *"Produtos com stock baixo"*, *"Total de vendas deste mês"*. A conversa mantém o contexto, responde com valores formatados, listas e tabelas, mostra a **fonte** dos dados e diz com clareza quando não há dados suficientes (não inventa).
@@ -282,6 +292,7 @@ Alternativa com o phpMyAdmin (`http://localhost/phpmyadmin` > **Importar**): imp
 | `migracao_v12_orcamentos_e_importacao.sql` | Orçamentos mensais por categoria e identificador de importação (para anular uma importação de CSV) |
 | `migracao_v13_funcionarios.sql` | Tarefas, metas, mensagens, observações do líder, avisos, registo de entradas e a pausa dos funcionários |
 | `migracao_v14_meta_ads.sql` | Ligação à Meta Ads (token cifrado) e cópia dos dados mais recentes |
+| `migracao_v18_importar_produtos.sql` | Colunas opcionais `import_batch` e `import_sig` em `products` (anular uma importação CSV com segurança); não altera dados |
 | `migracao_v17_limite_pedidos.sql` | Tabela `rate_limits` (contadores do limite de pedidos; guarda só códigos de dispersão, nunca IP nem email) |
 | `migracao_v16_variacoes_vendas.sql` | Variações de produto (tamanho/cor), marca, cabeçalho das vendas, retrato do produto na venda, estado (concluída/anulada) e ligação dos movimentos de estoque |
 
@@ -466,6 +477,7 @@ config/database.php        ligação PDO ao MySQL (sem palavras-passe: variávei
 bin/criar_utilizador_bd.php  cria o utilizador MySQL da aplicação (só SELECT, INSERT, UPDATE, DELETE)
 includes/env.php           variáveis de ambiente e ficheiros config/*.local.php
 health.php                 /health: verificação de saúde para monitores (includes/health.php tem a lógica)
+includes/product_import.php  importar/exportar produtos por CSV (api/product_import.php)
 includes/rate_limit.php    limite de pedidos (429); includes/client_ip.php: IP do cliente atrás de proxies de confiança
 .github/workflows/ci.yml   testes automáticos no GitHub (tests/ci/executar.sh é o que corre lá)
 bin/backup_bd.php          cópia de segurança da base de dados (comprimida, verificada, cifra opcional, retenção)
