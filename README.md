@@ -135,7 +135,7 @@ O botão abre uma janela de vidro (a mesma do aviso de reunião) com um cartão 
 ## Revisão: estoque em tempo real, Lumina e email (v14)
 - **Estoque editável** (`assets/js/stock.js`, `assets/css/stock.css`, `api/data.php?module=product_stock`): − / campo / + e *Guardar* em cada cartão. Só inteiros ≥ 0; o servidor valida, grava numa transação, regista um movimento de estoque e devolve o valor REAL da base de dados (é esse que a interface mostra). Se outra pessoa alterou entretanto, devolve 409 com o valor atual. O cartão «Estado do estoque» da Visão geral (produtos, unidades, estoque baixo, sem estoque) e a página atualizam sozinhos (30 s e ao voltar ao separador, sem pisar edições em curso).
 - **Lumina** é o nome da assistente em toda a interface, textos legais e prompt. Lê sempre a base de dados no momento (ferramentas só de leitura); novos filtros `stock_status` (low/out/ok) e contadores `low_stock_count` / `out_of_stock_count` coincidem com o painel. Se faltar dado ou permissão, diz-o em vez de inventar.
-- **Email honesto** (`includes/mailer.php`): `send_mail()` só devolve `true` quando o servidor SMTP aceitou a mensagem (resposta ao `DATA` verificada, AUTH PLAIN de reserva, remetente ajustado ao utilizador SMTP). Com o driver `log` (por omissão) NADA sai do servidor e a interface diz-o. Erros ficam em `storage/logs/mail-errors.log`. Configura em `config/mail.php` ou por variáveis de ambiente `LUMINA_MAIL_DRIVER`, `LUMINA_SMTP_HOST|PORT|SECURITY|USER|PASS`, `LUMINA_MAIL_FROM`. Botão **Testar envio de email** na aba Equipa. Para o Gmail usa uma «palavra-passe de aplicação» (smtp.gmail.com, 587, tls).
+- **Email honesto** (`includes/mailer.php`): `send_mail()` só devolve `true` quando o servidor SMTP aceitou a mensagem (resposta ao `DATA` verificada, AUTH PLAIN de reserva, remetente ajustado ao utilizador SMTP). Com o driver `log` (por omissão) NADA sai do servidor e a interface diz-o. Erros ficam em `storage/logs/mail-errors.log`. Configura em `config/mail.php` (sem palavra-passe), em `config/mail.local.php` ou por variáveis de ambiente `LUMINA_MAIL_DRIVER`, `LUMINA_SMTP_HOST|PORT|SECURITY|USER|PASS`, `LUMINA_MAIL_FROM`. Botão **Testar envio de email** na aba Equipa. Para o Gmail usa uma «palavra-passe de aplicação» (smtp.gmail.com, 587, tls).
 - Testes novos: `tests/run.php` (estoque API, email), `tests/browser/stock_ui.py`, `mail_ui.py`, `tests/mail_sink.py` (servidor SMTP local de teste).
 
 ## Meta Ads e idiomas (v15)
@@ -145,7 +145,7 @@ Liga a conta de anúncios da Meta e mostra campanhas, conjuntos de anúncios e a
 - **Fluxo:** *Ligar Meta Ads* → autenticação na Meta → autorizar (`ads_read`) → regresso ao Lumina (`api/meta.php?action=callback`) → conta ligada. Estados claros: *Não configurado*, *Não ligado*, *Meta Ads ligada*, *Autorização expirada*. Botão *Desligar* (revoga na Meta e apaga os dados guardados).
 - **Segurança:** o token vive só no servidor, cifrado (`includes/crypto.php`, libsodium); nunca vai para o navegador nem para as respostas da API. O pedido de ligação leva um `state` de uso único (CSRF). Os pedidos à Meta usam `appsecret_proof`. Só o dono acede (`require_owner`).
 - **Dados:** vêm da Graph API com paginação; a página guarda uma cópia (`meta_snapshots`) e atualiza sozinha se tiver mais de 10 min; botão *Atualizar* e períodos 7/30/90 dias. Quando a Meta não devolve um valor, mostra «—» (nunca inventa zeros). Erros traduzidos: autorização expirada (reconectar), sem permissão, limite de pedidos, indisponível.
-- **Configurar (uma vez):** crie uma app em developers.facebook.com (tipo *Empresa*), adicione *Facebook Login*, registe o URI `https://o-teu-site.pt/api/meta.php?action=callback` e ponha o ID e a chave da app em `config/meta.php` (ou nas variáveis `GF_META_APP_ID` e `GF_META_APP_SECRET`). Para quem não é administrador/testador da app, a Meta exige *App Review* para `ads_read`. Sem credenciais o ecrã diz «Não configurado».
+- **Configurar (uma vez):** crie uma app em developers.facebook.com (tipo *Empresa*), adicione *Facebook Login*, registe o URI `https://o-teu-site.pt/api/meta.php?action=callback` e ponha o ID e a chave da app nas variáveis `GF_META_APP_ID` e `GF_META_APP_SECRET` (ou em `config/meta.local.php`; nunca em `config/meta.php`, que vai para o GitHub). Para quem não é administrador/testador da app, a Meta exige *App Review* para `ads_read`. Sem credenciais o ecrã diz «Não configurado».
 - **Base de dados:** `database/migracao_v14_meta_ads.sql` (`meta_connections`, `meta_snapshots`); o `instalar_base_dados.bat` aplica-a.
 - **Testes:** `tests/meta_mock.py` (Graph API simulada) + `tests/browser/meta_ui.py`; usam `config/meta.local.php` (só para testes, **não** ir para produção).
 
@@ -193,14 +193,17 @@ Utilizador -> chat -> api/ai_chat.php -> IA <-> ferramentas de consulta seguras 
 
 1. Base de dados: corre `instalar_base_dados.bat` (ou importa `database/migracao_v4_ia.sql`). Cria `ai_conversations`, `ai_messages` e `ai_audit_log`; não altera os dados existentes.
    Respeita as regras do fluxo de caixa: entradas, saídas e saldo contam só os movimentos **realizados** (os previstos aparecem à parte) e as contas **canceladas** não contam.
-2. Cria uma chave em https://console.anthropic.com (API Keys) e coloca-a em `config/ai.php`:
+2. Cria uma chave em https://console.anthropic.com (API Keys) e coloca-a na variável de ambiente `LUMINA_AI_API_KEY` **ou** num ficheiro `config/ai.local.php` (nunca em `config/ai.php`, que vai para o GitHub):
 
 ```php
-'api_key' => 'sk-ant-...',
-'model'   => 'claude-sonnet-5-5',   // mais barato: 'claude-haiku-4-5-20251001'
+<?php
+return [
+    'api_key' => 'sk-ant-...',
+    'model'   => 'claude-sonnet-5-5',   // mais barato: 'claude-haiku-4-5-20251001'
+];
 ```
 
-3. **Recomendado:** abre `database/ia_utilizador_leitura.sql`, troca `TROCA_ESTA_PALAVRA_PASSE` por uma palavra-passe tua, importa-o no phpMyAdmin e preenche `db_user` (`gf_ia_leitura`) e `db_pass` em `config/ai.php`.
+3. **Recomendado:** abre `database/ia_utilizador_leitura.sql`, troca `TROCA_ESTA_PALAVRA_PASSE` por uma palavra-passe tua, importa-o no phpMyAdmin e preenche `db_user` (`gf_ia_leitura`) e `db_pass` em `config/ai.local.php` (ou em `LUMINA_AI_DB_USER` / `LUMINA_AI_DB_PASS`).
 
 **Sem chave** o chat funciona em **modo básico**: responde às perguntas mais comuns (a receber, a pagar, vencidas, stock, vendas, clientes, saldo, calendário) com as mesmas ferramentas seguras, mas sem IA, por isso não percebe perguntas livres nem seguimentos. O cabeçalho do chat indica o modo.
 
@@ -317,17 +320,37 @@ Para visualizar a ideia sem ligar Apache ou MySQL, faça duplo clique em:
 
 ## Base de dados
 
-A ligação está em `config/database.php`:
+A ligação está em `config/database.php`, que **não tem palavras-passe** (vai para o GitHub). Os dados vêm, por ordem de prioridade, de:
 
-```php
-const DB_HOST = '127.0.0.1';
-const DB_PORT = '3306';
-const DB_NAME = 'gestao_facil';
-const DB_USER = 'root';
-const DB_PASS = '';
+1. variáveis de ambiente `LUMINA_DB_HOST`, `LUMINA_DB_PORT`, `LUMINA_DB_NAME`, `LUMINA_DB_USER`, `LUMINA_DB_PASS`;
+2. `config/database.local.php` (só nesta máquina; o `.gitignore` impede-o de ir para o GitHub);
+3. os valores do XAMPP para desenvolvimento (`127.0.0.1`, `gestao_facil`, `root` sem palavra-passe).
+
+**Utilizador dedicado (recomendado sempre; obrigatório num site público).** O Lumina só precisa de ler e escrever dados, nunca de criar ou apagar tabelas. Corra uma vez (com o MySQL ligado e a base já instalada):
+
+```text
+C:\xampp\php\php.exe bin\criar_utilizador_bd.php        (ou duplo clique em criar_utilizador_bd.bat)
+php bin/criar_utilizador_bd.php                           (Linux / Raspberry Pi)
 ```
 
-Se o MySQL do XAMPP tiver palavra-passe, altere `DB_PASS`.
+Cria o utilizador `lumina_app` com uma palavra-passe aleatória e **apenas** `SELECT, INSERT, UPDATE, DELETE` nesta base, verifica que ele não consegue criar tabelas e guarda os dados em `config/database.local.php` (permissões 0600; a palavra-passe nunca é mostrada). Se o `root` tiver palavra-passe, defina antes `LUMINA_DB_ADMIN_PASS`. Para trocar a palavra-passe: `--rodar`. A criação das tabelas (`instalar_base_dados.bat`, migrações) continua a ser feita com a conta de administração, à parte da aplicação.
+
+**Recusa automática:** se o site estiver acessível pela Internet (`APP_URL` com um domínio público ou servidor num IP público) e a ligação usar `root` ou não tiver palavra-passe, o Lumina **recusa arrancar** e escreve a razão no log do PHP. Em `localhost` e em redes locais (192.168.x.x, `raspberrypi.local`) o XAMPP continua a funcionar sem configurar nada.
+
+### Segredos: nunca no código nem no GitHub
+
+Chaves e palavras-passe vão para **variáveis de ambiente** ou para um ficheiro `config/<nome>.local.php` (ignorado pelo Git, bloqueado pelo `.htaccess` da pasta `config`). Os ficheiros `config/*.php` que vão para o GitHub ficam sempre sem segredos.
+
+| O quê | Variáveis de ambiente | Ficheiro local (alternativa) |
+|---|---|---|
+| Base de dados | `LUMINA_DB_HOST` `LUMINA_DB_PORT` `LUMINA_DB_NAME` `LUMINA_DB_USER` `LUMINA_DB_PASS` | `config/database.local.php` |
+| Assistente de IA | `LUMINA_AI_API_KEY` `LUMINA_AI_DB_USER` `LUMINA_AI_DB_PASS` | `config/ai.local.php` |
+| E-mail (SMTP) | `LUMINA_MAIL_DRIVER` `LUMINA_MAIL_FROM` `LUMINA_SMTP_HOST` `LUMINA_SMTP_PORT` `LUMINA_SMTP_SECURITY` `LUMINA_SMTP_USER` `LUMINA_SMTP_PASS` | `config/mail.local.php` |
+| Meta Ads | `GF_META_APP_ID` `GF_META_APP_SECRET` | `config/meta.local.php` |
+| Google Calendar | `GF_GOOGLE_CLIENT_ID` `GF_GOOGLE_CLIENT_SECRET` | `config/google.local.php` |
+| Chave de cifra dos tokens | `GF_APP_KEY` | `config/app_key.php` (criada sozinha) |
+
+`php tests/secret_scan.php` procura chaves, tokens e palavras-passe escritos no código (e ficheiros que nunca devem ir para o repositório). Corre também no GitHub Actions. Se alguma vez uma chave for para o GitHub, **roda-a de imediato** (apagar o ficheiro não chega: fica no histórico).
 
 ## Primeiro acesso
 
@@ -351,14 +374,16 @@ Clique em **Criar conta**. O sistema guarda a palavra-passe usando `password_has
 ```text
 index.php                  landing page + login/registo
 dashboard.php              painel (requer sessão)
-config/database.php        ligação PDO ao MySQL
+config/database.php        ligação PDO ao MySQL (sem palavras-passe: variáveis LUMINA_DB_* ou config/database.local.php)
+bin/criar_utilizador_bd.php  cria o utilizador MySQL da aplicação (só SELECT, INSERT, UPDATE, DELETE)
+includes/env.php           variáveis de ambiente e ficheiros config/*.local.php
 config/app.php             fuso horário do programa
 includes/auth.php          sessão, segurança e respostas JSON
 includes/calendar.php      validação, gravação dos eventos e reuniões próximas
 includes/ai_tools.php      camada segura de consultas do assistente (ferramentas, permissões e âmbito por negócio)
 includes/ai_chat.php       conversa, contexto, modo básico e ligação à IA
 includes/http.php          pedidos HTTP (cURL ou streams)
-config/ai.php              chave da IA e definições do assistente
+config/ai.php              definições do assistente (a chave vai para LUMINA_AI_API_KEY ou config/ai.local.php)
 api/auth.php               login, registo e logout
 api/data.php               fluxo de caixa (GET/POST/DELETE, confirmar previsto), contas, contas a pagar/receber (pagar, eliminar) e produtos
 api/clients.php            clientes
@@ -410,7 +435,7 @@ docs/REVISAO_DE_CODIGO.md  relatório da revisão de código (segurança, desemp
 - Se `localhost` não abrir, confirme que o Apache está verde no XAMPP.
 - Se aparecer erro de ligação, confirme que o MySQL está verde.
 - Se aparecer `Unknown database`, importe `database/gestao_facil.sql`.
-- Se aparecer `Access denied`, ajuste `DB_USER` e `DB_PASS`.
+- Se aparecer `Access denied` / «utilizador ou palavra-passe incorretos», confirme `LUMINA_DB_*` ou `config/database.local.php` (ver «Base de dados»).
 - Se o calendário disser que falta a tabela, importe `database/migracao_calendario.sql`.
 
 ## Testar o módulo Clientes
@@ -519,7 +544,7 @@ Esta versão passou por uma revisão de segurança, desempenho e correção (ver
 | **Erros** | Os detalhes técnicos (por exemplo, erros SQL) ficam só no log do PHP. O cliente vê uma mensagem genérica. Para depurar, põe `APP_DEBUG` a `true` em `config/app.php` |
 | **Ficheiros internos** | `.htaccess` impede o acesso por URL a `config/`, `includes/`, `database/`, `docs/` e a ficheiros `.sql`, `.bat`, `.md`, `.log`; sem listagem de pastas |
 
-**Antes de pôr o site online:** muda a palavra-passe do `root` do MySQL (por omissão está vazia no XAMPP), cria um utilizador MySQL só para esta aplicação, usa HTTPS e põe a tua chave de IA apenas em `config/ai.php`.
+**Antes de pôr o site online:** muda a palavra-passe do `root` do MySQL (por omissão está vazia no XAMPP), cria o utilizador da aplicação com `bin/criar_utilizador_bd.php` (o Lumina recusa arrancar com `root` num site público), usa HTTPS e põe as chaves (IA, SMTP, Meta, Google) só em variáveis de ambiente ou em ficheiros `config/*.local.php`, nunca nos ficheiros que vão para o GitHub.
 
 ## Novidades (versão com Área pessoal)
 
@@ -531,7 +556,7 @@ Esta versão passou por uma revisão de segurança, desempenho e correção (ver
 - **Tempo ativo:** entrada, pausa e saída com contador em tempo real; histórico com filtros e exportação CSV; correções só para administrador/gerente, **com motivo** e registo de quem alterou.
 - **Bloco de notas:** privadas ou partilhadas, etiquetas, cores, fixar, pesquisa e guardar automaticamente.
 - **Painéis por ramo:** "Mais pedidos" (restaurante), "Produtos mais vendidos" (loja de roupas) e "Distância e custo-benefício" (motorista/motociclista), com comparação ao período anterior. Há **dados de exemplo** (marcados como tal) que se removem de uma vez. **Não há GPS:** nada de localização é recolhido.
-- **Google Calendar:** ligação oficial (OAuth + PKCE, só 2 âmbitos, tokens cifrados), escolha de calendários, sincronização manual ou automática (ao abrir o calendário), envio e apagar eventos. **Precisa das tuas credenciais** em `config/google.php`; sem elas diz "não configurado" e não simula nada.
+- **Google Calendar:** ligação oficial (OAuth + PKCE, só 2 âmbitos, tokens cifrados), escolha de calendários, sincronização manual ou automática (ao abrir o calendário), envio e apagar eventos. **Precisa das tuas credenciais** em variáveis de ambiente ou em `config/google.local.php`; sem elas diz "não configurado" e não simula nada.
 - **Interação:** avisos (toasts), confirmações acessíveis, esqueletos de carregamento, estados vazios e de erro com "Tentar novamente", animações de 180–240 ms que respeitam "reduzir movimento".
 
 ### O que **não** está feito
@@ -549,7 +574,7 @@ Cartões reais (só demonstração: não há integração com um fornecedor de p
 ## Novidades da versão atual
 
 **Conta e email**
-- *Esqueci-me da palavra-passe*, confirmação de email e convites de funcionários por email. Configura o envio em `config/mail.php` (por omissão grava os emails em `storage/mail/` em vez de os enviar, para testares sem servidor de email).
+- *Esqueci-me da palavra-passe*, confirmação de email e convites de funcionários por email. Configura o envio em `config/mail.php` (driver, remetente) e a palavra-passe SMTP em `config/mail.local.php` ou em `LUMINA_SMTP_PASS` (por omissão grava os emails em `storage/mail/` em vez de os enviar, para testares sem servidor de email).
 - Palavra-passe com pelo menos 8 caracteres.
 - Na Área pessoal: **Descarregar os meus dados** e **Eliminar a minha conta** (RGPD).
 
@@ -589,7 +614,8 @@ Cartões reais (só demonstração: não há integração com um fornecedor de p
 
 ## Testes
 
-- `php tests/run.php`: testes de API e de unidades (precisa do Lumina a funcionar e de uma base de dados de TESTE).
+- `php tests/run.php`: testes de API e de unidades (precisa do Lumina a funcionar e de uma base de dados de TESTE). Os testes novos vivem em `tests/sections/*.php` (um ficheiro por tema). Alguns criam uma base e um utilizador temporários: precisam da conta de administração (`LUMINA_DB_ADMIN_USER` / `LUMINA_DB_ADMIN_PASS`; por omissão `root` sem palavra-passe) e são saltados se ela não existir.
+- `php tests/secret_scan.php`: procura segredos escritos no código.
 - `tests/browser/`: testes de navegador com Playwright (ver o README dessa pasta).
 - `tests/apache/check_htaccess.py`: as regras do `.htaccess` num Apache real.
 

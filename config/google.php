@@ -14,16 +14,16 @@
         Em "URIs de redirecionamento autorizados" ponha EXATAMENTE o endereço do ponto 4.
      4. Redirect URI de exemplo no XAMPP:
           http://localhost/lumina/api/google.php?action=callback
-     5. Copie o ID de cliente e o segredo para aqui em baixo (ou use as variáveis de ambiente
-        GF_GOOGLE_CLIENT_ID e GF_GOOGLE_CLIENT_SECRET, melhor numa hospedagem a sério).
+     5. Copie o ID de cliente e o segredo para as variáveis de ambiente GF_GOOGLE_CLIENT_ID e GF_GOOGLE_CLIENT_SECRET
+        (melhor numa hospedagem a sério) ou para um ficheiro config/google.local.php (ignorado pelo Git).
+        NÃO os escreva neste ficheiro: ele vai para o GitHub.
 
    MENOR PRIVILÉGIO: pedimos só dois âmbitos:
      - calendar.calendarlist.readonly : ver a LISTA dos teus calendários (para escolheres quais sincronizar)
      - calendar.events                : ler, criar e apagar EVENTOS
    Não pedimos acesso a email, contactos, Drive nem à palavra-passe do Google (nunca a vemos).
 
-   Este ficheiro contém um SEGREDO: está protegido pelo .htaccess da pasta config; não o
-   partilhe nem o envie para o GitHub.
+   Este ficheiro NÃO contém segredos e está protegido pelo .htaccess da pasta config.
    ========================================================================= */
 return [
     'client_id'     => getenv('GF_GOOGLE_CLIENT_ID') ?: '',

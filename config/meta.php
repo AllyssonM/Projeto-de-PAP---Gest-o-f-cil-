@@ -12,13 +12,14 @@
         ponha EXATAMENTE o endereço do ponto 4. (Em modo ativo a Meta exige HTTPS; em modo de
         desenvolvimento aceita http://localhost.)
      4. Redirect URI de exemplo:   https://o-teu-site.pt/api/meta.php?action=callback
-     5. Definições da app > Básico: copie o "ID da app" e a "Chave secreta da app" para aqui
-        (ou use as variáveis de ambiente GF_META_APP_ID e GF_META_APP_SECRET — melhor numa hospedagem).
+     5. Definições da app > Básico: copie o "ID da app" e a "Chave secreta da app" para as variáveis de ambiente
+        GF_META_APP_ID e GF_META_APP_SECRET (melhor numa hospedagem) ou para um ficheiro config/meta.local.php
+        (ignorado pelo Git). NÃO os escreva neste ficheiro: ele vai para o GitHub.
      6. Permissão pedida: apenas "ads_read" (ler anúncios e métricas). Para utilizadores que não são
         administradores/testadores da app, a Meta exige "Revisão da app" (App Review) para ads_read.
 
    O Lumina só LÊ dados (campanhas, conjuntos, anúncios e métricas). Não cria, edita nem pausa anúncios.
-   Este ficheiro contém um SEGREDO: está protegido pelo .htaccess da pasta config; não o partilhe.
+   Este ficheiro NÃO contém segredos (o ID e a chave vêm do ambiente ou de config/meta.local.php) e está protegido pelo .htaccess.
    ========================================================================= */
 return [
     'app_id'        => getenv('GF_META_APP_ID') ?: '',

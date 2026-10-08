@@ -1107,6 +1107,9 @@ section('Email: resultado honesto do envio', function () {
     check('remetente real é respeitado', mail_from_address(['driver' => 'smtp', 'from_email' => 'info@x.pt', 'smtp' => ['username' => 'real@gmail.com']]) === 'info@x.pt');
 });
 
+// Secções novas: um ficheiro por tema em tests/sections/ (carregados por ordem alfabética), para as alterações não colidirem neste ficheiro.
+foreach (glob(__DIR__ . '/sections/*.php') ?: [] as $__sectionFile) { require $__sectionFile; }
+
 echo "\n----------------------------------------\n";
 echo "Passaram: {$GLOBALS['pass']}   Falharam: {$GLOBALS['fail']}\n";
 exit($GLOBALS['fail'] > 0 ? 1 : 0);

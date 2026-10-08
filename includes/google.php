@@ -26,7 +26,7 @@ function google_cfg(): array
     static $cfg = null;
     if ($cfg === null) {
         $cfg = require __DIR__ . '/../config/google.php';
-        $local = __DIR__ . '/../config/google.local.php';          // só para testes locais (não vai no pacote)
+        $local = __DIR__ . '/../config/google.local.php';          // segredos e ajustes desta instalação (ignorado pelo Git; ver README > Segredos)
         if (is_file($local)) $cfg = array_replace($cfg, (array)require $local);
     }
     return $cfg;

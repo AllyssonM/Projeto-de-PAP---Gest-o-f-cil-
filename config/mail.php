@@ -14,6 +14,10 @@
      'mail'  usa a função mail() do PHP (só funciona se o servidor estiver configurado para isso).
 
    Se ficar vazio, é deduzido do pedido (serve para localhost).
+
+   A PALAVRA-PASSE DO SMTP NÃO SE ESCREVE AQUI (este ficheiro vai para o GitHub). Põe-na na variável de ambiente
+   LUMINA_SMTP_PASS ou num ficheiro config/mail.local.php (ignorado pelo Git), por exemplo:
+       <?php return ['driver' => 'smtp', 'smtp' => ['host' => 'smtp.gmail.com', 'username' => 'tu@gmail.com', 'password' => '...']];
    ========================================================================= */
 return [
     'driver'     => 'log',

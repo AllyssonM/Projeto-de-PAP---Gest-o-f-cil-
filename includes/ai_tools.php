@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/lang.php';
+require_once __DIR__ . '/env.php';
 
 /* =========================================================
    CAMADA SEGURA DE CONSULTAS PARA O ASSISTENTE DE IA
@@ -29,6 +30,11 @@ function ai_config(): array
 {
     $file = __DIR__ . '/../config/ai.php';
     $cfg = is_file($file) ? (array)(require $file) : [];
+    // Segredos (chave da IA, utilizador só de leitura): variáveis de ambiente ou config/ai.local.php (ignorado pelo Git) têm prioridade.
+    $cfg = lumina_local_config('ai') + $cfg;
+    foreach (['LUMINA_AI_API_KEY' => 'api_key', 'LUMINA_AI_DB_USER' => 'db_user', 'LUMINA_AI_DB_PASS' => 'db_pass'] as $env => $key) {
+        if (($v = lumina_env($env)) !== null) { $cfg[$key] = $v; }
+    }
     return $cfg + [
         'api_key' => '', 'model' => 'claude-sonnet-5-5', 'api_url' => 'https://api.anthropic.com/v1/messages',
         'max_tokens' => 1200, 'max_tool_rounds' => 6, 'history_messages' => 12, 'rate_limit_per_minute' => 12,

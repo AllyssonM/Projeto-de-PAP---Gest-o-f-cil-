@@ -10,12 +10,15 @@
    ========================================================================= */
 declare(strict_types=1);
 
+require_once __DIR__ . '/env.php';
+
 function mail_config(): array
 {
     static $cfg = null;
     if ($cfg === null) {
         $file = __DIR__ . '/../config/mail.php';
-        $cfg = array_replace_recursive(['driver' => 'log', 'from_email' => 'nao-responder@lumina.local', 'from_name' => 'Lumina', 'smtp' => ['host' => '', 'port' => 587, 'security' => 'tls', 'username' => '', 'password' => '']], is_file($file) ? (array)require $file : []);
+        $cfg = array_replace_recursive(['driver' => 'log', 'from_email' => 'nao-responder@lumina.local', 'from_name' => 'Lumina', 'smtp' => ['host' => '', 'port' => 587, 'security' => 'tls', 'username' => '', 'password' => '']], is_file($file) ? (array)require $file : [], lumina_local_config('mail'));
+        // (a palavra-passe do SMTP vai para config/mail.local.php, que o Git ignora, ou para LUMINA_SMTP_PASS; nunca para config/mail.php)
         // Variáveis de ambiente têm prioridade (permitem configurar o servidor sem editar ficheiros nem guardar a palavra-passe no código).
         $env = fn(string $k) => ($v = getenv($k)) === false || $v === '' ? null : $v;
         foreach (['LUMINA_MAIL_DRIVER' => ['driver'], 'LUMINA_MAIL_FROM' => ['from_email'], 'LUMINA_MAIL_FROM_NAME' => ['from_name'],
