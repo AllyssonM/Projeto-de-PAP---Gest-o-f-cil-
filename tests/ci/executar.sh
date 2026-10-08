@@ -65,8 +65,20 @@ echo
 
 echo "== 4/4 Testes =="
 RC=0
-LUMINA_URL="http://127.0.0.1:$APP_PORT/" php tests/run.php || RC=$?
+SAIDA="$(mktemp)"
+trap 'kill "$SERVIDOR" 2>/dev/null || true; rm -f "$LOG" "$SAIDA"' EXIT
+LUMINA_URL="http://127.0.0.1:$APP_PORT/" php tests/run.php 2>&1 | tee "$SAIDA" || RC=$?
 php tests/secret_scan.php || RC=$?
+
+# No GitHub, mostra o resultado em destaque (anotação + resumo do trabalho), sem ser preciso abrir o registo completo.
+RESUMO="$(grep -E '^Passaram: ' "$SAIDA" | tail -n 1 || true)"
+if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    echo "::notice title=Testes do Lumina::${RESUMO:-sem resumo (a suite não chegou ao fim)}"
+    if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+        { echo "### Testes do Lumina"; echo; echo "${RESUMO:-sem resumo (a suite não chegou ao fim)}"; } >> "$GITHUB_STEP_SUMMARY"
+    fi
+    grep -E '^  FALHOU' "$SAIDA" | head -n 10 | cut -c1-300 | while IFS= read -r linha; do echo "::error title=Teste falhado::$linha"; done
+fi
 if [ "$RC" -ne 0 ]; then
     echo; echo "Falhou. Registo de erros do servidor PHP (últimas linhas):"; tail -n 40 "$LOG" || true
 fi
