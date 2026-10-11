@@ -170,9 +170,9 @@ Liga a conta de anúncios da Meta e mostra campanhas, conjuntos de anúncios e a
 - **Base de dados:** `database/migracao_v16_variacoes_vendas.sql` — segura de repetir, **não apaga dados**: cada produto existente fica com uma variação (tamanho e cor lidos de `attributes`, quantidade = estoque atual). O `instalar_base_dados.bat` aplica-a.
 - **Testes:** `tests/browser/stock_sales_ui.py` (API + ecrã: criação, validações, duplicados, edição, vendas válidas/acima do estoque, idempotência, 8 vendas em simultâneo com 3 em estoque, total automático/manual, anular/editar/apagar vendas, ranking, palavra-passe, nome ao lado da foto, ecrãs pequenos, consola sem erros).
 
-## Importar e exportar produtos por CSV (v18) — só API, ainda sem botões no ecrã
+## Importar e exportar produtos por CSV (v18) — botões no Estoque
 
-Estado: **implementado e testado na API** (86 testes). **Não está ligado ao ecrã** do Estoque: os botões «Importar CSV» / «Exportar CSV» mudariam o aspeto da página e aguardam autorização.
+Estado: **implementado e testado** (API: 86 testes; botões «Importar CSV» / «Exportar CSV» no Estoque, com o assistente de pré-visualização e «Anular importação», verificados em Chromium; Firefox/Safari não testados). Reutiliza os botões e o modal já existentes.
 
 - `GET api/product_import.php?action=export` → CSV (UTF-8 com BOM, separador `;`, preços `12,50`), uma linha por variação; arquivados ficam de fora; células a começar por `= + - @` levam apóstrofo (o Excel não executa fórmulas).
 - `POST` com `action=preview` → mostra o que ia acontecer **sem gravar nada** (produtos novos, já existentes, linhas com erro e motivo, colunas sugeridas). `action=import` → cria os produtos novos, **tudo ou nada** numa só transação.

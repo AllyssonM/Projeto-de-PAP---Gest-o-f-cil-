@@ -42,3 +42,5 @@
 .sale-recent .sale-status.completed { color: var(--primary); } .sale-recent .sale-status.cancelled { color: var(--red); }
 .sale-recent .sale-actions { display: flex; gap: 6px; }
 .rank-table .rank-pos { color: var(--muted); font-weight: 700; width: 28px; }
+
+.stock-io { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 4px; }

@@ -605,6 +605,8 @@ $gfUser = client_user_payload($user) + ['modules' => TEAM_MODULES,
       <article class="panel">
         <p class="eyebrow" data-t="stockEyebrow">INVENTÁRIO</p>
         <h2 data-t="stockTitle">Produtos</h2>
+        <!-- Importar / exportar produtos por CSV (assets/js/product_import.js; mesmos botões do Fluxo de caixa) -->
+        <div class="stock-io"><button type="button" class="button secondary" id="st-import">⬆ Importar CSV</button> <button type="button" class="button secondary" id="st-export">⬇ Exportar CSV</button></div>
         <!-- Pesquisa e filtros do estoque (assets/js/variants.js): só aparecem nos ramos com tamanhos/cores -->
         <form id="stock-filters" class="ins-controls stock-filters ramo-off" autocomplete="off" role="search" aria-label="Pesquisar e filtrar o estoque">
           <label class="stock-f-q"><span>Pesquisar</span><input type="search" name="q" maxlength="80" placeholder="Nome, marca, referência ou categoria"></label>
@@ -1088,6 +1090,7 @@ $gfUser = client_user_payload($user) + ['modules' => TEAM_MODULES,
 <script src="assets/js/staff.js"></script>            <!-- aba Funcionários (líder) -->
 <script src="assets/js/work.js"></script>             <!-- aba Mensagens e tarefas (funcionário) -->
 <script src="assets/js/import.js"></script>           <!-- importar movimentos de um CSV -->
+<script src="assets/js/product_import.js"></script>   <!-- importar/exportar produtos por CSV -->
 <script src="assets/js/attachments.js"></script>      <!-- recibos e anexos (📎) -->
 <script src="assets/js/budgets.js"></script>          <!-- orçamentos por categoria -->
 <script src="assets/js/recurring.js"></script>        <!-- contas recorrentes -->
