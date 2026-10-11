@@ -553,6 +553,8 @@ database/migracao_calendario.sql  só a tabela do calendário (bases já existen
 database/migracao_v2..v6   migrações aplicadas pelo instalador (ver Instalação)
 database/ia_utilizador_leitura.sql  utilizador MySQL só de leitura para a IA (opcional)
 docs/REVISAO_DE_CODIGO.md  relatório da revisão de código (segurança, desempenho e correção)
+docs/GUIA_DO_CODIGO.md     guia para quem está a começar: como o código se liga e por onde estudar
+docs/SWOT_LUMINA.md        análise SWOT honesta (pontos fortes e fracos, oportunidades, ameaças)
 .htaccess                  sem listagem de pastas e sem acesso a ficheiros internos
 ```
 

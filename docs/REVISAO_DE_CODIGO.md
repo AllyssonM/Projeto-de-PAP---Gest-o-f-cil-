@@ -264,3 +264,6 @@ Feito: fundo 4,5 MB → 45 KB (WebP); títulos, descrições, canonical, Open Gr
 - Produtividade vem só das tarefas atribuídas; sem tarefas mostra «—».
 - Os textos legais são modelos: o acompanhamento de trabalhadores deve ser revisto por um jurista e comunicado aos funcionários.
 
+## Atualização de 11 de outubro de 2026
+
+Os números acima referem-se à data da revisão original (406 testes). Desde então a suite passou a **905 testes, 0 falhas** (commit `13f2bf2`), com migrações até à `v19`, limite de pedidos, cabeçalhos HTTP, importação/exportação CSV, alertas de estoque e relatório de vendas. Para o estado atual e as lacunas, ver `docs/SWOT_LUMINA.md`.
