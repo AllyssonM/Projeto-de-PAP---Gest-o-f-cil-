@@ -191,6 +191,12 @@ Estado: **implementado e testado** com um «sendmail» falso (nada sai da máqui
 - **Honesto:** com o email em modo de teste (driver `log`) **não envia nem grava nada** e diz-o; o aviso fica pendente até o SMTP estar configurado (`config/mail.local.php` ou `LUMINA_SMTP_*`).
 - **Canais:** `includes/alert_channels.php` é o único sítio por onde saem os avisos; só existe o canal `email`. Acrescentar outro (ex.: Telegram) é acrescentar uma função, sem mexer em quem avisa. O aviso de cópia de segurança falhada pode usar o mesmo canal (por ligar).
 
+## Relatório de vendas com dados reais (painel «Produtos mais vendidos»)
+
+Estado: **implementado e testado** (22 testes; conferido no Chromium com vendas de exemplo; 905 testes na suite). Sem migração: só lê `sales` e `products`. A lógica está em `includes/sales_report.php`; a API é `api/insights.php?kind=sales` (campo `report`).
+Acrescenta ao painel existente, com os mesmos cartões, tabelas e barras: **ticket médio**, **evolução da receita** (por dia até 62 dias, por semana até 400, depois por mês), **menos vendidos** (só com mais de 5 produtos vendidos), **produtos parados** (com estoque e sem nenhuma venda no período, com o capital parado), **margem estimada** e **«Já vendido»** por produto.
+Limites honestos: a **margem é uma estimativa**: usa o custo ATUAL do produto (a venda não guarda o custo da data) e só conta vendas de produtos com custo > 0 (o cartão diz a % da receita coberta). A **rotação** é aproximada (vendidas ÷ (vendidas + estoque atual)); não há histórico do estoque médio. Vendas anuladas não contam.
+
 ## Lumina (assistente de IA — chat sobre os teus dados)
 
 No canto inferior direito do painel há um botão pequeno (✦). Abre um chat onde se faz perguntas em linguagem natural sobre os dados do negócio: *"Quanto temos para receber?"*, *"E quanto disso está atrasado?"*, *"Quanto devemos a cada fornecedor?"*, *"Produtos com stock baixo"*, *"Total de vendas deste mês"*. A conversa mantém o contexto, responde com valores formatados, listas e tabelas, mostra a **fonte** dos dados e diz com clareza quando não há dados suficientes (não inventa).

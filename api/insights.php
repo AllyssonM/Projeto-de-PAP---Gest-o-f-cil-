@@ -21,6 +21,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/stock_lib.php';
+require_once __DIR__ . '/../includes/sales_report.php';
 
 $user = require_login();
 $uid = (int)$user['id'];
@@ -105,6 +106,8 @@ function sales_overview(int $tid, DateTime $from, DateTime $to, DateTime $prevFr
     ];
     if ($kind === 'sales') {
         $out['brands'] = $by('brand'); $out['sizes'] = $by('size'); $out['colors'] = $by('color');
+        $out['report'] = sales_report_extras($pdo, $tid, $from, $to, $days, $w, array_merge($a, $extra), $f);      // ticket médio, evolução, parados, margem (includes/sales_report.php)
+        $out['top'] = sales_add_sell_through($out['top']); $out['top_product'] = $out['top'][0] ?? null;
         // "Produtos mais vendidos": cada variação (nome + marca + tamanho + cor) separada, da que mais saiu para a que menos saiu
         $out['ranking'] = array_map(fn($r) => ['name' => $r['name'], 'brand' => $r['brand'], 'size' => $r['size'], 'color' => $r['color'], 'qty' => (int)$r['qty'],
                 'revenue' => (float)$r['revenue'], 'last_sale' => $r['last_sale']],

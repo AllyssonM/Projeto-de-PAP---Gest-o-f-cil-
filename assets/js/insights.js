@@ -90,8 +90,25 @@
     }
     // estoque dos mais vendidos
     const withStock = d.top.filter(x => x.stock !== null);
-    if (withStock.length) h += `<article class="ins-box"><h3>Estoque dos mais vendidos</h3><div class="ins-scroll"><table class="time-table"><thead><tr><th>Produto</th><th>Vendidos</th><th>Estoque atual</th><th>Dura aprox.</th></tr></thead><tbody>${withStock.map(x => `<tr><td>${esc(x.name)}</td><td>${num(x.qty)}</td><td>${num(x.stock)}${x.days_left !== null && x.days_left < 7 ? ' <span class="ins-low">baixo</span>' : ''}</td><td>${x.days_left !== null ? num(x.days_left, 1) + ' dias' : '—'}</td></tr>`).join('')}</tbody></table></div></article>`;
+    if (withStock.length) h += `<article class="ins-box"><h3>Estoque dos mais vendidos</h3><div class="ins-scroll"><table class="time-table"><thead><tr><th>Produto</th><th>Vendidos</th><th>Estoque atual</th><th>Dura aprox.</th>${kind === 'sales' ? '<th>Já vendido</th>' : ''}</tr></thead><tbody>${withStock.map(x => `<tr><td>${esc(x.name)}</td><td>${num(x.qty)}</td><td>${num(x.stock)}${x.days_left !== null && x.days_left < 7 ? ' <span class="ins-low">baixo</span>' : ''}</td><td>${x.days_left !== null ? num(x.days_left, 1) + ' dias' : '—'}</td>${kind === 'sales' ? `<td>${x.sell_through !== null && x.sell_through !== undefined ? num(x.sell_through, 1) + '%' : '—'}</td>` : ''}</tr>`).join('')}</tbody></table></div></article>`;
+    if (kind === 'sales' && d.report) h += renderSalesReport(d.report);
     h += `<article class="ins-box ins-recs"><h3>Recomendações de reposição</h3>${d.recommendations.length ? `<ul>${d.recommendations.map(r => `<li>⚠️ ${esc(r.text)}</li>`).join('')}</ul>` : '<p class="muted">Sem alertas: os produtos mais vendidos têm estoque para os próximos dias. As recomendações aparecem quando o nome do produto vendido coincide com um produto do teu estoque.</p>'}</article>`;
+    return h;
+  }
+
+  /* ------------------------------------------------------------ vendas: ticket médio, evolução, parados, margem (dados reais, api/insights.php > report) */
+  function renderSalesReport(r) {
+    const dt = s => new Date(s + 'T00:00:00');
+    const label = (s, grain) => grain === 'month' ? dt(s).toLocaleDateString(window.LUMINA_LOCALE || 'pt-PT', { month: '2-digit', year: 'numeric' })
+      : (grain === 'week' ? 'sem. ' : '') + dt(s).toLocaleDateString(window.LUMINA_LOCALE || 'pt-PT', { day: '2-digit', month: '2-digit' });
+    let h = '<div class="ins-kpis">' + kpi('Ticket médio', r.avg_ticket !== null ? eur(r.avg_ticket) : '—', `${num(r.orders)} venda(s)`);
+    if (r.margin) h += kpi('Margem estimada', eur(r.margin.margin), `${num(r.margin.margin_pct, 1)}% · custo atual dos produtos, ${num(r.margin.coverage, 0)}% da receita com custo`);
+    h += '</div>';
+    const pts = r.series.points.map(p => ({ name: label(p.date, r.series.grain), revenue: p.revenue }));
+    if (pts.some(p => p.revenue > 0)) h += `<article class="ins-box"><h3>Evolução da receita</h3><div class="ins-scroll" style="max-height:340px">${bars(pts, 'revenue', 'Receita ao longo do período', eur)}</div></article>`;
+    h += '<div class="ins-cols">';
+    if (r.least.length) h += `<article class="ins-box"><h3>Menos vendidos</h3>${bars(r.least, 'qty', 'Produtos menos vendidos', v => num(v) + ' un.')}</article>`;
+    h += `<article class="ins-box"><h3>Produtos parados</h3>${r.slow.length ? `<p class="muted">Com estoque e sem nenhuma venda neste período.</p><div class="ins-scroll"><table class="time-table"><thead><tr><th>Produto</th><th>Estoque</th><th>Capital parado</th><th>Última venda</th></tr></thead><tbody>${r.slow.map(x => `<tr><td>${esc(x.name)}${x.brand ? ' · ' + esc(x.brand) : ''}</td><td>${num(x.stock)}</td><td>${x.tied_capital !== null ? eur(x.tied_capital) : '—'}</td><td>${x.last_sale ? esc(new Date(x.last_sale.replace(' ', 'T')).toLocaleDateString(window.LUMINA_LOCALE || 'pt-PT')) : 'nunca'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Todos os produtos com estoque tiveram vendas neste período.</p>'}</article></div>`;
     return h;
   }
 
