@@ -2,6 +2,7 @@
 
 Index of this folder. Each document links back here; add a line when you add a file.
 
+- [Faturação certificada em Portugal: análise para o Lumina](ANALISE_LEGAL_FATURACAO.md)
 - [Guia do código para quem está a começar](GUIA_DO_CODIGO.md)
 - [Guia do projeto — Lumina](GUIA_DO_PROJETO.md)
 - [Lumina no Raspberry Pi 4: passo a passo (v2)](Lumina_no_Raspberry_Pi_passo_a_passo_v2.md)
