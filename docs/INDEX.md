@@ -8,6 +8,7 @@ Index of this folder. Each document links back here; add a line when you add a f
 - [Lumina no Raspberry Pi 4: passo a passo (v2)](Lumina_no_Raspberry_Pi_passo_a_passo_v2.md)
 - [Meta Ads: do teste à app real](META_ADS_APP_REAL.md)
 - [Lumina](PAP_Lumina.md)
+- [Prompt para o próximo agente: o que falta fazer no Lumina](PROMPT_PROXIMOS_PASSOS.md)
 - [Revisão de código: Lumina (versão unida)](REVISAO_DE_CODIGO.md)
 - [RGPD e integrações: que dados vão para onde](RGPD_INTEGRACOES.md)
 - [Roteiro de apresentação — Lumina](Roteiro_Apresentacao_PAP.md)
